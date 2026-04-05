@@ -22,6 +22,7 @@ public class AnalysisOrchestratorAgent {
     private final GraphBuilderAgent graphBuilderAgent;
     private final CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder;
 
+
     public AnalysisOrchestratorAgent(
             RequestValidationAgent requestValidationAgent,
             SalesforceFetchAgent salesforceFetchAgent,
@@ -43,8 +44,11 @@ public class AnalysisOrchestratorAgent {
 
     @Transactional(readOnly = true)
     public RuntimeGraph loadDependencyGraph() {
+        List<GraphEdge> objectRelations = runCustomStandardObjectRelationAnalysis();
+        List<GraphEdge> metadataEdges = salesforceFetchAgent.fetchMetadata(new AnalysisRequest(null, null, null));
+        metadataEdges.addAll(objectRelations);
         return graphBuilderAgent.build(
-                salesforceFetchAgent.fetchMetadata(new AnalysisRequest(null, null, null))
+                metadataEdges
         );
     }
 
