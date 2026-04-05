@@ -1,35 +1,38 @@
 package org.autorabit.salesforcecontextgraph.api.controller;
 
+import com.sforce.soap.metadata.DescribeMetadataResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
+import org.autorabit.salesforcecontextgraph.api.request.FieldDefinitionsRequestDto;
 import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphEdgeResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphNodeResponse;
+import org.autorabit.salesforcecontextgraph.api.response.MetadataObjectsResponse;
+import org.autorabit.salesforcecontextgraph.collectors.CustomStandardObjectRelationsCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
 import org.autorabit.salesforcecontextgraph.service.AnalysisOrchestratorAgent;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/analysis")
 public class AnalysisController {
 
     private final AnalysisOrchestratorAgent orchestratorAgent;
+    private final CustomStandardObjectRelationsCollector collector;
 
-    public AnalysisController(AnalysisOrchestratorAgent orchestratorAgent) {
+    public AnalysisController(
+            AnalysisOrchestratorAgent orchestratorAgent,
+            CustomStandardObjectRelationsCollector collector
+    ) {
         this.orchestratorAgent = orchestratorAgent;
+        this.collector = collector;
     }
 
     @PostMapping
@@ -55,6 +58,26 @@ public class AnalysisController {
     @GetMapping("/message")
     public String getAnalysisMessage() {
         return "Analysis response placeholder";
+    }
+
+    @GetMapping("/metadata/{metadataType}")
+    public MetadataObjectsResponse listMetadataObjects(
+            @PathVariable String metadataType
+    ) {
+        return new MetadataObjectsResponse(collector.listMetadataFullNames(metadataType));
+    }
+
+    @GetMapping("/metadata/describe")
+    public DescribeMetadataResult describeMetadata() {
+        return collector.describeMetadata();
+    }
+
+    @PostMapping("/metadata/field-definitions")
+    public List<Map<String, Object>> getFieldDefinitions(@RequestBody FieldDefinitionsRequestDto requestDto) {
+        if (requestDto == null || requestDto.fieldApiNames() == null || requestDto.fieldApiNames().isEmpty()) {
+            throw new IllegalArgumentException("fieldApiNames is required");
+        }
+        return collector.getFieldDefinitions(requestDto.fieldApiNames());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -1,32 +1,51 @@
 package org.autorabit.salesforcecontextgraph.domain.enums;
 
 public enum NodeType {
-    CUSTOM_OBJECT,
-    STANDARD_OBJECT,
-    FIELD,
-    PERMISSION_SET,
-    PROFILE,
-    ROLE,
-    APEX_CLASS,
-    APEX_TRIGGER,
-    LWC,
-    LIGHTNINGCOMPONENTBUNDLE,
-    AURA_COMPONENT,
-    FLOW,
-    VALIDATION_RULE,
-    LAYOUT,
-    RECORD_TYPE,
-    CUSTOM_METADATA_TYPE,
-    CUSTOM_METADATA_RECORD,
-    CUSTOM_SETTINGS,
-    NAMED_CREDENTIAL,
-    REMOTE_SITE_SETTING,
-    PERMISSION_SET_GROUP,
-    SHARING_RULE,
-    QUEUE,
-    STATIC_RESOURCE,
-    EMAIL_TEMPLATE,
-    CUSTOM_TAB,
-    FLEXIPAGE,
-    CUSTOM_APPLICATION
+    CUSTOM_OBJECT("CustomObject"),
+    STANDARD_OBJECT("StandardEntity"),
+    FIELD("CustomField"),
+    PERMISSION_SET("PermissionSet"),
+    PROFILE("Profile"),
+    ROLE("UserRole"),
+    APEX_CLASS("ApexClass"),
+    APEX_TRIGGER("ApexTrigger"),
+    LWC("LightningComponentBundle"),
+    AURA_COMPONENT("AuraDefinitionBundle"),
+    FLOW("FlowDefinition"),
+    VALIDATION_RULE("ValidationRule"),
+    LAYOUT("Layout"),
+    RECORD_TYPE("RecordType"),
+    CUSTOM_METADATA_TYPE("CustomMetadata"),
+    CUSTOM_METADATA_RECORD("CustomMetadataRecord"),
+    CUSTOM_SETTINGS("CustomSetting"),
+    NAMED_CREDENTIAL("NamedCredential"),
+    REMOTE_SITE_SETTING("RemoteSiteSetting"),
+    PERMISSION_SET_GROUP("PermissionSetGroup"),
+    SHARING_RULE("SharingRule"),
+    QUEUE("Queue"),
+    STATIC_RESOURCE("StaticResource"),
+    EMAIL_TEMPLATE("EmailTemplate"),
+    CUSTOM_TAB("CustomTab"),
+    FLEXI_PAGE("FlexiPage"),
+    WEB_LINK("WebLink"),
+    CUSTOM_APPLICATION("CustomApplication");
+
+    private final String metadatatype;
+
+    NodeType(String metadatatype) {
+        this.metadatatype = metadatatype;
+    }
+
+    public String getMetadatatype() {
+        return metadatatype;
+    }
+
+    public static NodeType getNodeType(String metadatatype) {
+        for(NodeType nodeType : NodeType.values()) {
+            if(nodeType.getMetadatatype().equals(metadatatype)) {
+                return nodeType;
+            }
+        }
+        return null;
+    }
 }

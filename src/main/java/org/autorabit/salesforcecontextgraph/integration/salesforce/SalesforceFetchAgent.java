@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.autorabit.salesforcecontextgraph.config.SalesforceIntegrationProperties;
+import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.AnalysisRequest;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
+import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,10 +51,13 @@ public class SalesforceFetchAgent {
                 continue;
             }
 
+            String pmetataDataType = NodeType.getNodeType(metadataType) != null ? NodeType.getNodeType(metadataType).toString() : metadataType;
+            String cmetataDataType = NodeType.getNodeType(refType) != null ? NodeType.getNodeType(refType).toString() : refType;
+
             edges.add(new GraphEdge(
-                    new GraphNode(metadataId, mapMetadataType(metadataType), metadataName),
-                    new GraphNode(refId, mapMetadataType(refType), refName),
-                    "DEPENDS_ON"
+                    new GraphNode(metadataId, pmetataDataType, metadataName),
+                    new GraphNode(refId, cmetataDataType, refName),
+                    EdgeResolverService.resolve(metadataType, refType).toString()
             ));
         }
         return edges;
@@ -63,30 +68,6 @@ public class SalesforceFetchAgent {
         GraphNode fromNode = new GraphNode(fallbackName, "CUSTOM_OBJECT", fallbackName);
         GraphNode toNode = new GraphNode(fallbackName + ".SyntheticField__c", "FIELD", fallbackName + ".SyntheticField__c");
         return List.of(new GraphEdge(fromNode, toNode, "DEPENDS_ON"));
-    }
-
-    private String sanitize(String value) {
-        return value.replaceAll("[^A-Za-z0-9]+", "_");
-    }
-
-    private String mapMetadataType(String metadataType) {
-        return switch (metadataType) {
-            case "StandardEntity" -> "STANDARD_OBJECT";
-            case "CustomObject" -> "CUSTOM_OBJECT";
-            case "CustomField", "FieldDefinition" -> "FIELD";
-            case "Layout" -> "LAYOUT";
-            case "FlexiPage" -> "FLEXIPAGE";
-            case "Flow" -> "FLOW";
-            case "ApexClass" -> "APEX_CLASS";
-            case "RecordType" -> "RECORD_TYPE";
-            case "ValidationRule" -> "VALIDATION_RULE";
-            case "CustomTab" -> "CUSTOM_TAB";
-            default -> metadataType.toUpperCase();
-        };
-    }
-
-    private String escapeSoql(String value) {
-        return value.replace("\\", "\\\\").replace("'", "\\'");
     }
 
     private String stringValue(Map<String, Object> record, String key) {
