@@ -42,6 +42,19 @@ public class AnalysisController {
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
+    @GetMapping("/custom-standard-object-relations")
+    public AnalysisGraphResponse createCustomStandardObjectRelationsAnalysis() {
+        List<GraphEdge> graphEdges = orchestratorAgent.runCustomStandardObjectRelationAnalysis();
+        List<GraphEdgeResponse> edges = graphEdges.stream()
+                .map(edge -> new GraphEdgeResponse(
+                        toNodeResponse(edge.fromNode()),
+                        toNodeResponse(edge.toNode()),
+                        edge.type()
+                ))
+                .toList();
+        return new AnalysisGraphResponse(toNodeResponses(graphEdges), edges);
+    }
+
     @PostMapping("/target")
     public AnalysisGraphResponse createTargetMetadataAnalysis(@RequestBody AnalysisRequestDto requestDto) {
         List<GraphEdge> graphEdges = orchestratorAgent.runTargetMetadataAnalysis(requestDto);

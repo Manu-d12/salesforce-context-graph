@@ -20,15 +20,18 @@ public class AnalysisOrchestratorAgent {
     private final RequestValidationAgent requestValidationAgent;
     private final SalesforceFetchAgent salesforceFetchAgent;
     private final GraphBuilderAgent graphBuilderAgent;
+    private final CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder;
 
     public AnalysisOrchestratorAgent(
             RequestValidationAgent requestValidationAgent,
             SalesforceFetchAgent salesforceFetchAgent,
-            GraphBuilderAgent graphBuilderAgent
+            GraphBuilderAgent graphBuilderAgent,
+            CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder
     ) {
         this.requestValidationAgent = requestValidationAgent;
         this.salesforceFetchAgent = salesforceFetchAgent;
         this.graphBuilderAgent = graphBuilderAgent;
+        this.customStandardObjectEdgeBuilder = customStandardObjectEdgeBuilder;
     }
 
     @Transactional
@@ -43,6 +46,11 @@ public class AnalysisOrchestratorAgent {
         return graphBuilderAgent.build(
                 salesforceFetchAgent.fetchMetadata(new AnalysisRequest(null, null, null))
         );
+    }
+
+    public List<GraphEdge> runCustomStandardObjectRelationAnalysis() {
+        List<GraphEdge> edges = customStandardObjectEdgeBuilder.buildGraphEdges();
+        return edges;
     }
 
     public List<GraphEdge> runTargetMetadataAnalysis(AnalysisRequestDto request) {

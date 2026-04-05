@@ -54,7 +54,7 @@ public class CustomStandardObjectRelationsCollector {
                 .toList();
 
         return toolingApiClient.query("""
-                SELECT Id, QualifiedApiName, DataType, Label, EntityDefinition.QualifiedApiName
+                SELECT Id, ReferenceTo, QualifiedApiName, DataType, Label, EntityDefinition.QualifiedApiName
                 FROM FieldDefinition
                 WHERE QualifiedApiName IN (%s)
                 AND EntityDefinition.QualifiedApiName IN (%s)
