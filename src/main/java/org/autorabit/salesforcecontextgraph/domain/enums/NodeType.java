@@ -3,8 +3,9 @@ package org.autorabit.salesforcecontextgraph.domain.enums;
 public enum NodeType {
     CUSTOM_OBJECT("CustomObject"),
     STANDARD_OBJECT("StandardEntity"),
-    FIELD("CustomField"),
+    CUSTOM_FIELD("CustomField"),
     PERMISSION_SET("PermissionSet"),
+    PERMISSION_SET_GROUP("PermissionSetGroup"),
     PROFILE("Profile"),
     ROLE("UserRole"),
     APEX_CLASS("ApexClass"),
@@ -20,7 +21,6 @@ public enum NodeType {
     CUSTOM_SETTINGS("CustomSetting"),
     NAMED_CREDENTIAL("NamedCredential"),
     REMOTE_SITE_SETTING("RemoteSiteSetting"),
-    PERMISSION_SET_GROUP("PermissionSetGroup"),
     SHARING_RULE("SharingRule"),
     QUEUE("Queue"),
     STATIC_RESOURCE("StaticResource"),

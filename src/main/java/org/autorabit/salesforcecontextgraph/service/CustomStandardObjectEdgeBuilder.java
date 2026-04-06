@@ -22,30 +22,40 @@ public class CustomStandardObjectEdgeBuilder {
         List<String> customFields = collector.listMetadataFullNames("CustomField");
         List<Map<String, Object>> fieldDefinitions = collector.getFieldDefinitions(customFields);
 
+
         List<GraphEdge> edges = new ArrayList<>();
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
+            String fieldName = stringValue(fieldDefinition.get("QualifiedApiName"));
             String objectApiName = extractEntityApiName(fieldDefinition.get("EntityDefinition"));
             if (objectApiName == null) {
                 continue;
             }
 
-            String referencedObject = extractFirstReferenceTarget(fieldDefinition);
-            if (referencedObject == null) {
-                continue;
-            }
-
             GraphNode fromNode = new GraphNode(
+                    objectApiName + "." + fieldName,
+                    NodeType.CUSTOM_FIELD.toString(),
+                    fieldName
+            );
+
+            GraphNode toParentNode = new GraphNode(
                     objectApiName,
-                    resolveObjectType(objectApiName).toString(),
+                    resolveObjectType(fieldName).toString(),
                     objectApiName
             );
-            GraphNode toNode = new GraphNode(
+            GraphEdge edge = new GraphEdge(fromNode, toParentNode, EdgeType.REFERENCES.toString());
+            edges.add(edge);
+
+            String referencedObject = extractFirstReferenceTarget(fieldDefinition);
+
+            if (referencedObject == null) continue;
+
+            GraphNode toReferencedNode = new GraphNode(
                     referencedObject,
-                    resolveObjectType(referencedObject).toString(),
+                "DATA_TYPE_REFERENCE",
                     referencedObject
             );
-            GraphEdge edge = new GraphEdge(fromNode, toNode, EdgeType.REFERENCES.toString());
-            edges.add(edge);
+            GraphEdge newEdge = new GraphEdge(fromNode, toReferencedNode, EdgeType.REFERENCES.toString());
+            edges.add(newEdge);
         }
         return edges;
     }

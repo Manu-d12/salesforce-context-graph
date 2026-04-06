@@ -22,7 +22,7 @@ class AnalysisOrchestratorAgentTest {
     void shouldBuildRuntimeGraph() {
         RuntimeGraph graph = orchestratorAgent.runAnalysis(new AnalysisRequest(
                 AnalysisType.DEPENDENCY,
-                NodeType.FIELD,
+                NodeType.CUSTOM_FIELD,
                 "Payment__c.CardNumber__c"
         ));
 

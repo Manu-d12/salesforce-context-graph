@@ -1,18 +1,15 @@
 package org.autorabit.salesforcecontextgraph.api.controller;
 
-import com.sforce.soap.metadata.DescribeMetadataResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
-import org.autorabit.salesforcecontextgraph.api.request.FieldDefinitionsRequestDto;
 import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphEdgeResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphNodeResponse;
-import org.autorabit.salesforcecontextgraph.api.response.MetadataObjectsResponse;
-import org.autorabit.salesforcecontextgraph.collectors.CustomStandardObjectRelationsCollector;
+import org.autorabit.salesforcecontextgraph.collectors.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
@@ -25,14 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class AnalysisController {
 
     private final AnalysisOrchestratorAgent orchestratorAgent;
-    private final CustomStandardObjectRelationsCollector collector;
+    private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
 
     public AnalysisController(
             AnalysisOrchestratorAgent orchestratorAgent,
-            CustomStandardObjectRelationsCollector collector
+            PermissionSetDependenciesCollector permissionSetDependenciesCollector
     ) {
         this.orchestratorAgent = orchestratorAgent;
-        this.collector = collector;
+        this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
     }
 
     @PostMapping
@@ -45,6 +42,20 @@ public class AnalysisController {
     @GetMapping("/custom-standard-object-relations")
     public AnalysisGraphResponse createCustomStandardObjectRelationsAnalysis() {
         List<GraphEdge> graphEdges = orchestratorAgent.runCustomStandardObjectRelationAnalysis();
+        List<GraphEdgeResponse> edges = graphEdges.stream()
+                .map(edge -> new GraphEdgeResponse(
+                        toNodeResponse(edge.fromNode()),
+                        toNodeResponse(edge.toNode()),
+                        edge.type()
+                ))
+                .toList();
+        return new AnalysisGraphResponse(toNodeResponses(graphEdges), edges);
+    }
+
+
+    @GetMapping("/permission-set-relations")
+    public AnalysisGraphResponse createPermissionSetRelationsAnalysis() {
+        List<GraphEdge> graphEdges = permissionSetDependenciesCollector.buildPermissionSetDependencies();
         List<GraphEdgeResponse> edges = graphEdges.stream()
                 .map(edge -> new GraphEdgeResponse(
                         toNodeResponse(edge.fromNode()),
@@ -71,26 +82,6 @@ public class AnalysisController {
     @GetMapping("/message")
     public String getAnalysisMessage() {
         return "Analysis response placeholder";
-    }
-
-    @GetMapping("/metadata/{metadataType}")
-    public MetadataObjectsResponse listMetadataObjects(
-            @PathVariable String metadataType
-    ) {
-        return new MetadataObjectsResponse(collector.listMetadataFullNames(metadataType));
-    }
-
-    @GetMapping("/metadata/describe")
-    public DescribeMetadataResult describeMetadata() {
-        return collector.describeMetadata();
-    }
-
-    @PostMapping("/metadata/field-definitions")
-    public List<Map<String, Object>> getFieldDefinitions(@RequestBody FieldDefinitionsRequestDto requestDto) {
-        if (requestDto == null || requestDto.fieldApiNames() == null || requestDto.fieldApiNames().isEmpty()) {
-            throw new IllegalArgumentException("fieldApiNames is required");
-        }
-        return collector.getFieldDefinitions(requestDto.fieldApiNames());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

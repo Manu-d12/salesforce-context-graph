@@ -1,15 +1,10 @@
 package org.autorabit.salesforcecontextgraph.integration.salesforce;
 
-import com.sforce.soap.metadata.FileProperties;
-import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.DescribeMetadataResult;
-import com.sforce.soap.metadata.CustomObject;
-import com.sforce.soap.metadata.MetadataConnection;
-import com.sforce.soap.metadata.Metadata;
-import com.sforce.soap.metadata.ReadResult;
+import com.sforce.soap.metadata.*;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.autorabit.salesforcecontextgraph.config.SalesforceIntegrationProperties;
 import org.springframework.stereotype.Component;
@@ -26,6 +21,27 @@ public class MetadataApiClient {
     ) {
         this.oAuthService = oAuthService;
         this.properties = properties;
+    }
+
+    public List<Metadata> getPermissionSetDescribe(List<String> metadataApiNames, String metadataType) {
+        if (metadataApiNames == null || metadataApiNames.isEmpty()) {
+            return List.of();
+        }
+        try {
+            MetadataConnection metadataConnection = createConnection();
+            List<Metadata> metaDataRecords = new ArrayList<>();
+            for (int index = 0; index < metadataApiNames.size(); index += 10) {
+                List<String> batch = metadataApiNames.subList(index, Math.min(index + 10, metadataApiNames.size()));
+                ReadResult readResult = metadataConnection.readMetadata(metadataType, batch.toArray(String[]::new));
+                if (readResult == null || readResult.getRecords() == null) {
+                    continue;
+                }
+                metaDataRecords.addAll(Arrays.asList(readResult.getRecords()));
+            }
+            return metaDataRecords;
+        } catch (ConnectionException ex) {
+            throw new IllegalStateException("Metadata API readMetadata failed", ex);
+        }
     }
 
     public List<String> listMetadataFullNames(String metadataType) {

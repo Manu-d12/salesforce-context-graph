@@ -96,13 +96,13 @@ public final class EdgeResolverService {
             return new EdgeResolution(EdgeType.USES, DependencyStrength.SOFT_DEPENDENCY);
         }
 
-        if (from == NodeType.FIELD && isObjectNode(to)) {
+        if (from == NodeType.CUSTOM_FIELD && isObjectNode(to)) {
             return new EdgeResolution(EdgeType.BELONGS_TO, DependencyStrength.HARD_DEPENDENCY);
         }
-        if (from == NodeType.CUSTOM_OBJECT && to == NodeType.FIELD) {
+        if (from == NodeType.CUSTOM_OBJECT && to == NodeType.CUSTOM_FIELD) {
             return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.HARD_DEPENDENCY);
         }
-        if (from == NodeType.STANDARD_OBJECT && to == NodeType.FIELD) {
+        if (from == NodeType.STANDARD_OBJECT && to == NodeType.CUSTOM_FIELD) {
             return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.HARD_DEPENDENCY);
         }
         if (from == NodeType.CUSTOM_OBJECT && to == NodeType.RECORD_TYPE) {
@@ -127,7 +127,7 @@ public final class EdgeResolverService {
             return new EdgeResolution(EdgeType.USES, DependencyStrength.HARD_DEPENDENCY);
         }
 
-        if (from == NodeType.LAYOUT && to == NodeType.FIELD) {
+        if (from == NodeType.LAYOUT && to == NodeType.CUSTOM_FIELD) {
             return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.SOFT_DEPENDENCY);
         }
         if (from == NodeType.LAYOUT && isObjectNode(to)) {
@@ -210,7 +210,7 @@ public final class EdgeResolverService {
     }
 
     private static boolean isObjectOrField(NodeType nodeType) {
-        return isObjectNode(nodeType) || nodeType == NodeType.FIELD;
+        return isObjectNode(nodeType) || nodeType == NodeType.CUSTOM_FIELD;
     }
 
     private static boolean isConfigNode(NodeType nodeType) {
