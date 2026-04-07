@@ -1,12 +1,13 @@
 package org.autorabit.salesforcecontextgraph.service;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
-import org.autorabit.salesforcecontextgraph.collectors.PermissionSetDependenciesCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataComponentDependencyCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.AnalysisRequest;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
-import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceFetchAgent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,39 +19,28 @@ import java.util.Set;
 @Service
 public class AnalysisOrchestratorAgent {
 
-    private final RequestValidationAgent requestValidationAgent;
-    private final SalesforceFetchAgent salesforceFetchAgent;
+    private final MetadataComponentDependencyCollector metadataComponentDependencyCollector;
     private final GraphBuilderAgent graphBuilderAgent;
-    private final CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder;
+    private final CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector;
     private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
-
 
     public AnalysisOrchestratorAgent(
             RequestValidationAgent requestValidationAgent,
-            SalesforceFetchAgent salesforceFetchAgent,
+            MetadataComponentDependencyCollector metadataComponentDependencyCollector,
             GraphBuilderAgent graphBuilderAgent,
-            CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder,
+            CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector,
             PermissionSetDependenciesCollector permissionSetDependenciesCollector
     ) {
-        this.requestValidationAgent = requestValidationAgent;
-        this.salesforceFetchAgent = salesforceFetchAgent;
+        this.metadataComponentDependencyCollector = metadataComponentDependencyCollector;
         this.graphBuilderAgent = graphBuilderAgent;
-        this.customStandardObjectEdgeBuilder = customStandardObjectEdgeBuilder;
+        this.customStandardObjectDependencyCollector = customStandardObjectDependencyCollector;
         this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
     }
 
-    @Transactional
-    public RuntimeGraph runAnalysis(AnalysisRequest request) {
-        AnalysisRequest validatedRequest = requestValidationAgent.validate(request);
-        java.util.List<GraphEdge> edges = salesforceFetchAgent.fetchMetadata(validatedRequest);
-        return graphBuilderAgent.build(edges);
-    }
-
-    @Transactional(readOnly = true)
-    public RuntimeGraph loadDependencyGraph() {
-        List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildPermissionSetDependencies();
-        List<GraphEdge> objectRelations = runCustomStandardObjectRelationAnalysis();
-        List<GraphEdge> metadataEdges = salesforceFetchAgent.fetchMetadata(new AnalysisRequest(null, null, null));
+    public RuntimeGraph loadOrganizationGraph() {
+        List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildRelativeGraphEdges();
+        List<GraphEdge> objectRelations = customStandardObjectDependencyCollector.buildRelativeGraphEdges();
+        List<GraphEdge> metadataEdges = metadataComponentDependencyCollector.buildRelativeGraphEdges();
         metadataEdges.addAll(objectRelations);
         metadataEdges.addAll(permissionSetDependencies);
         return graphBuilderAgent.build(
@@ -58,15 +48,22 @@ public class AnalysisOrchestratorAgent {
         );
     }
 
-    public List<GraphEdge> runCustomStandardObjectRelationAnalysis() {
-        List<GraphEdge> edges = customStandardObjectEdgeBuilder.buildGraphEdges();
-        return edges;
+    public RuntimeGraph buildPermissionSetRelationGraph() {
+        List<GraphEdge> edges = permissionSetDependenciesCollector.buildRelativeGraphEdges();
+        return graphBuilderAgent.build(
+                edges
+        );
     }
 
-    public List<GraphEdge> runTargetMetadataAnalysis(AnalysisRequestDto request) {
-        RuntimeGraph fullGraph = graphBuilderAgent.build(
-                salesforceFetchAgent.fetchMetadata(new AnalysisRequest(request.analysisType(), request.targetType(), request.targetName()))
+    public RuntimeGraph buildCustomStandardObjectRelationGraph() {
+        List<GraphEdge> edges = customStandardObjectDependencyCollector.buildRelativeGraphEdges();
+        return graphBuilderAgent.build(
+                edges
         );
+    }
+
+    public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request) {
+        RuntimeGraph fullGraph = loadOrganizationGraph();
         GraphNode startingNode = null;
         for (String nodeKey : fullGraph.nodes().keySet()) {
             GraphNode node = fullGraph.nodes().get(nodeKey);
@@ -83,7 +80,7 @@ public class AnalysisOrchestratorAgent {
         List<GraphEdge> targetEdges = new ArrayList<>();
         Set<String> visitedNodeId = new HashSet<>();
         collectTargetEdges(startingNode, fullGraph, targetEdges, visitedNodeId);
-        return targetEdges;
+        return graphBuilderAgent.build(targetEdges);
     }
 
     private void collectTargetEdges(GraphNode node, RuntimeGraph graph, List<GraphEdge> targetEdges, Set<String> visitedNodeId) {

@@ -9,7 +9,6 @@ import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
 import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphEdgeResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphNodeResponse;
-import org.autorabit.salesforcecontextgraph.collectors.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
@@ -22,61 +21,41 @@ import org.springframework.web.bind.annotation.*;
 public class AnalysisController {
 
     private final AnalysisOrchestratorAgent orchestratorAgent;
-    private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
 
     public AnalysisController(
-            AnalysisOrchestratorAgent orchestratorAgent,
-            PermissionSetDependenciesCollector permissionSetDependenciesCollector
+            AnalysisOrchestratorAgent orchestratorAgent
     ) {
         this.orchestratorAgent = orchestratorAgent;
-        this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
     }
 
     @PostMapping
     public AnalysisGraphResponse createAnalysis() {
-        RuntimeGraph graph = orchestratorAgent.loadDependencyGraph();
+        RuntimeGraph graph = orchestratorAgent.loadOrganizationGraph();
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
     @GetMapping("/custom-standard-object-relations")
     public AnalysisGraphResponse createCustomStandardObjectRelationsAnalysis() {
-        List<GraphEdge> graphEdges = orchestratorAgent.runCustomStandardObjectRelationAnalysis();
-        List<GraphEdgeResponse> edges = graphEdges.stream()
-                .map(edge -> new GraphEdgeResponse(
-                        toNodeResponse(edge.fromNode()),
-                        toNodeResponse(edge.toNode()),
-                        edge.type()
-                ))
-                .toList();
-        return new AnalysisGraphResponse(toNodeResponses(graphEdges), edges);
+        RuntimeGraph graph = orchestratorAgent.buildCustomStandardObjectRelationGraph();
+        List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
+        return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
 
     @GetMapping("/permission-set-relations")
     public AnalysisGraphResponse createPermissionSetRelationsAnalysis() {
-        List<GraphEdge> graphEdges = permissionSetDependenciesCollector.buildPermissionSetDependencies();
-        List<GraphEdgeResponse> edges = graphEdges.stream()
-                .map(edge -> new GraphEdgeResponse(
-                        toNodeResponse(edge.fromNode()),
-                        toNodeResponse(edge.toNode()),
-                        edge.type()
-                ))
-                .toList();
-        return new AnalysisGraphResponse(toNodeResponses(graphEdges), edges);
+        RuntimeGraph graph = orchestratorAgent.buildPermissionSetRelationGraph();
+        List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
+        return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
+
     }
 
     @PostMapping("/target")
     public AnalysisGraphResponse createTargetMetadataAnalysis(@RequestBody AnalysisRequestDto requestDto) {
-        List<GraphEdge> graphEdges = orchestratorAgent.runTargetMetadataAnalysis(requestDto);
-        List<GraphEdgeResponse> edges = graphEdges.stream()
-                .map(edge -> new GraphEdgeResponse(
-                        toNodeResponse(edge.fromNode()),
-                        toNodeResponse(edge.toNode()),
-                        edge.type()
-                ))
-                .toList();
-        return new AnalysisGraphResponse(toNodeResponses(graphEdges), edges);
+        RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto);
+        List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
+        return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
     @GetMapping("/message")

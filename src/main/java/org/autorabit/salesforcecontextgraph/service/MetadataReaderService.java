@@ -7,18 +7,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.autorabit.salesforcecontextgraph.api.request.MetadataDescribeRequestDto;
-import org.autorabit.salesforcecontextgraph.collectors.CustomStandardObjectRelationsCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MetadataReaderService {
 
-    private final CustomStandardObjectRelationsCollector collector;
+    private final CustomStandardObjectDependencyCollector collector;
     private final MetadataApiClient metadataApiClient;
 
     public MetadataReaderService(
-            CustomStandardObjectRelationsCollector collector,
+            CustomStandardObjectDependencyCollector collector,
             MetadataApiClient metadataApiClient
     ) {
         this.collector = collector;
