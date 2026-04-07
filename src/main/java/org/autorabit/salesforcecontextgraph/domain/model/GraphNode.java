@@ -5,4 +5,8 @@ public record GraphNode(
         String type,
         String name
 ) {
+    public static GraphNode buildGraphNode(String id, String type, String name) {
+        String newId = id + " - " + type;
+        return new GraphNode(newId, type, name);
+    }
 }

@@ -43,6 +43,14 @@ public class AnalysisController {
     }
 
 
+    @GetMapping("/permission-set-group-relations")
+    public AnalysisGraphResponse createPermissionSetGroupRelationsAnalysis() {
+        RuntimeGraph graph = orchestratorAgent.buildPermissionGetGroupRelationGraph();
+        List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
+        return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
+
+    }
+
     @GetMapping("/permission-set-relations")
     public AnalysisGraphResponse createPermissionSetRelationsAnalysis() {
         RuntimeGraph graph = orchestratorAgent.buildPermissionSetRelationGraph();
@@ -50,6 +58,8 @@ public class AnalysisController {
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
 
     }
+
+
 
     @PostMapping("/target")
     public AnalysisGraphResponse createTargetMetadataAnalysis(@RequestBody AnalysisRequestDto requestDto) {
