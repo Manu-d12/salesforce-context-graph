@@ -1,6 +1,7 @@
 package org.autorabit.salesforcecontextgraph.service;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
+import org.autorabit.salesforcecontextgraph.collectors.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.AnalysisRequest;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
@@ -21,18 +22,21 @@ public class AnalysisOrchestratorAgent {
     private final SalesforceFetchAgent salesforceFetchAgent;
     private final GraphBuilderAgent graphBuilderAgent;
     private final CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder;
+    private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
 
 
     public AnalysisOrchestratorAgent(
             RequestValidationAgent requestValidationAgent,
             SalesforceFetchAgent salesforceFetchAgent,
             GraphBuilderAgent graphBuilderAgent,
-            CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder
+            CustomStandardObjectEdgeBuilder customStandardObjectEdgeBuilder,
+            PermissionSetDependenciesCollector permissionSetDependenciesCollector
     ) {
         this.requestValidationAgent = requestValidationAgent;
         this.salesforceFetchAgent = salesforceFetchAgent;
         this.graphBuilderAgent = graphBuilderAgent;
         this.customStandardObjectEdgeBuilder = customStandardObjectEdgeBuilder;
+        this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
     }
 
     @Transactional
@@ -44,9 +48,11 @@ public class AnalysisOrchestratorAgent {
 
     @Transactional(readOnly = true)
     public RuntimeGraph loadDependencyGraph() {
+        List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildPermissionSetDependencies();
         List<GraphEdge> objectRelations = runCustomStandardObjectRelationAnalysis();
         List<GraphEdge> metadataEdges = salesforceFetchAgent.fetchMetadata(new AnalysisRequest(null, null, null));
         metadataEdges.addAll(objectRelations);
+        metadataEdges.addAll(permissionSetDependencies);
         return graphBuilderAgent.build(
                 metadataEdges
         );
