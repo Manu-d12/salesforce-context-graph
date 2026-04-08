@@ -1,5 +1,6 @@
 package org.autorabit.salesforcecontextgraph.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
@@ -26,6 +27,11 @@ public class SyncOrgMetadataService {
         permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto);
     }
 
+
+    @PostConstruct
+    public void init() {
+        sync(null);
+    }
 
 
 }

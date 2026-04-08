@@ -20,25 +20,21 @@ public class ToolingApiClient {
 
     private final SalesforceOAuthService oAuthService;
     private final SalesforceIntegrationProperties properties;
-    private final ToolingSoqlValidator toolingSoqlValidator;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
     public ToolingApiClient(
             SalesforceOAuthService oAuthService,
             SalesforceIntegrationProperties properties,
-            ToolingSoqlValidator toolingSoqlValidator,
             ObjectMapper objectMapper
     ) {
         this.oAuthService = oAuthService;
         this.properties = properties;
-        this.toolingSoqlValidator = toolingSoqlValidator;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newHttpClient();
     }
 
     public List<Map<String, Object>> query(String soql) {
-//        toolingSoqlValidator.validate(soql);
         SalesforceSession session = oAuthService.authenticate();
         String endpoint = trimTrailingSlash(session.instanceUrl())
                 + "/services/data/"

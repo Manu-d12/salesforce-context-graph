@@ -7,12 +7,15 @@ import java.util.Map;
 
 import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorservice.CollectorService;
+import org.autorabit.salesforcecontextgraph.db_entities.MetadataDependency;
 import org.autorabit.salesforcecontextgraph.domain.enums.EdgeType;
 import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
+import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
+import org.autorabit.salesforcecontextgraph.utils.Helper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -21,13 +24,16 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
 
     private final MetadataApiClient metadataApiClient;
     private final ToolingApiClient toolingApiClient;
+    private final MetadataDependencyRepository metadataDependencyRepository;
 
     public CustomStandardObjectDependencyCollector(
             MetadataApiClient metadataApiClient,
-            ToolingApiClient toolingApiClient
+            ToolingApiClient toolingApiClient,
+            MetadataDependencyRepository metadataDependencyRepository
     ) {
         this.metadataApiClient = metadataApiClient;
         this.toolingApiClient = toolingApiClient;
+        this.metadataDependencyRepository = metadataDependencyRepository;
     }
 
     @Override
@@ -74,7 +80,16 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
     @Override
     @Async("loadDependenciesExecutor")
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
+        List<GraphEdge> edges = buildRelativeGraphEdges();
+        if (edges.isEmpty()) {
+            return;
+        }
 
+        String orgId = Helper.resolveOrgId(metadataApiClient);
+        List<MetadataDependency> metadataDependencies = edges.stream()
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId))
+                .toList();
+        metadataDependencyRepository.saveAll(metadataDependencies);
     }
 
     public List<String> listMetadataFullNames(String metadataType) {
