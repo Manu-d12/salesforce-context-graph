@@ -103,6 +103,11 @@ public class MetadataApiClient {
         }
     }
 
+    public String resolveOrgId() {
+        SalesforceSession session = oAuthService.authenticate();
+        return extractOrgId(session.idUrl());
+    }
+
     private MetadataConnection createConnection() throws ConnectionException {
         SalesforceSession session = oAuthService.authenticate();
         ConnectorConfig config = new ConnectorConfig();
@@ -124,5 +129,17 @@ public class MetadataApiClient {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String extractOrgId(String idUrl) {
+        if (!hasText(idUrl)) {
+            return null;
+        }
+
+        int separatorIndex = idUrl.lastIndexOf('/');
+        if (separatorIndex < 0 || separatorIndex == idUrl.length() - 1) {
+            return idUrl;
+        }
+        return idUrl.substring(separatorIndex + 1);
     }
 }

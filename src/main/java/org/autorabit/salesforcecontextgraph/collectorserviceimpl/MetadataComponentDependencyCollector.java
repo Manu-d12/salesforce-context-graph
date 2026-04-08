@@ -3,6 +3,8 @@ package org.autorabit.salesforcecontextgraph.collectorserviceimpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.config.SalesforceIntegrationProperties;
 import org.autorabit.salesforcecontextgraph.collectorservice.CollectorService;
 import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
@@ -37,7 +39,7 @@ public class MetadataComponentDependencyCollector implements CollectorService {
 
     @Async("loadDependenciesExecutor")
     @Override
-    public void persistRelativeGraphEdges() {
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
 
     }
 

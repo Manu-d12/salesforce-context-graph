@@ -1,5 +1,6 @@
 package org.autorabit.salesforcecontextgraph.collectorserviceimpl;
 
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorservice.CollectorService;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.springframework.scheduling.annotation.Async;
@@ -15,7 +16,7 @@ public class ProfileDependenciesCollector implements CollectorService {
 
     @Override
     @Async
-    public void persistRelativeGraphEdges() {
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
 
     }
 }

@@ -4,6 +4,7 @@ import com.sforce.soap.metadata.Metadata;
 import com.sforce.soap.metadata.PermissionSetGroup;
 import lombok.AllArgsConstructor;
 import org.autorabit.salesforcecontextgraph.api.request.MetadataDescribeRequestDto;
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorservice.CollectorService;
 import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
@@ -57,7 +58,7 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
 
     @Async("loadDependenciesExecutor")
     @Override
-    public void persistRelativeGraphEdges() {
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
 
     }
 }

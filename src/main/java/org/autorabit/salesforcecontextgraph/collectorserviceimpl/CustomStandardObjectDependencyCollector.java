@@ -4,6 +4,8 @@ import com.sforce.soap.metadata.DescribeMetadataResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorservice.CollectorService;
 import org.autorabit.salesforcecontextgraph.domain.enums.EdgeType;
 import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
@@ -71,7 +73,7 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
 
     @Override
     @Async("loadDependenciesExecutor")
-    public void persistRelativeGraphEdges() {
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
 
     }
 
