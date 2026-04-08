@@ -33,11 +33,11 @@ public class MetadataDependency {
     private String refMetadataType;
 
     @Column(name = "ref_metadata_name")
-    private String refMetadataName;
+    private String refMetadataName; // api name
 
     @Column(name = "ref_metadata_label")
-    private String refMetadataLabel;
+    private String refMetadataLabel; // label
 
     @Column(name = "edge_type")
-    private String edgeType;
+    private String edgeType; // kind of dependency
 }

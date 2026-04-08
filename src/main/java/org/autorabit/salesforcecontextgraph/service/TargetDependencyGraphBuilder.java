@@ -3,7 +3,6 @@ package org.autorabit.salesforcecontextgraph.service;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
-import org.autorabit.salesforcecontextgraph.domain.enums.AnalysisType;
 import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
@@ -33,7 +32,7 @@ public class TargetDependencyGraphBuilder {
         return graphBuilderAgent.build(edges);
     }
 
-    private void buildGraphRecursively(
+    private void buildGraphRecursively (
             Map<NodeType, List<String>> nodeTypeListMap,
             List<GraphEdge> edges,
             SalesforceSession session
