@@ -7,6 +7,8 @@ import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardO
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataComponentDependencyCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceOAuthService;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -16,22 +18,17 @@ public class SyncOrgMetadataService {
 
     private final CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector;
     private final MetadataComponentDependencyCollector metadataComponentDependencyCollector;
+    private final SalesforceOAuthService salesforceOAuthService;
     private PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
 
     @Async("loadDependenciesExecutor")
     public void sync(SfOrgSyncRequestDto requestDto) {
-        metadataComponentDependencyCollector.persistRelativeGraphEdges(requestDto);
-        customStandardObjectDependencyCollector.persistRelativeGraphEdges(requestDto);
-        permissionSetDependenciesCollector.persistRelativeGraphEdges(requestDto);
-        permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto);
+        SalesforceSession session = salesforceOAuthService.authenticate(requestDto);
+        metadataComponentDependencyCollector.persistRelativeGraphEdges(requestDto, session);
+        customStandardObjectDependencyCollector.persistRelativeGraphEdges(requestDto, session);
+        permissionSetDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
+        permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
     }
-
-
-    @PostConstruct
-    public void init() {
-        sync(null);
-    }
-
 
 }

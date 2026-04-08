@@ -9,6 +9,7 @@ import java.util.Map;
 import org.autorabit.salesforcecontextgraph.api.request.MetadataDescribeRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,15 +30,31 @@ public class MetadataReaderService {
         return collector.listMetadataFullNames(metadataType);
     }
 
+    public List<String> listMetadataObjects(String metadataType, SalesforceSession session) {
+        return collector.listMetadataFullNames(metadataType, session);
+    }
+
     public DescribeMetadataResult describeMetadata() {
         return collector.describeMetadata();
+    }
+
+    public DescribeMetadataResult describeMetadata(SalesforceSession session) {
+        return collector.describeMetadata(session);
     }
 
     public List<Map<String, Object>> getFieldDefinitions(List<String> fieldApiNames) {
         return collector.getFieldDefinitions(fieldApiNames);
     }
 
+    public List<Map<String, Object>> getFieldDefinitions(List<String> fieldApiNames, SalesforceSession session) {
+        return collector.getFieldDefinitions(fieldApiNames, session);
+    }
+
     public List<Metadata> getMetaDataDescribe(MetadataDescribeRequestDto requestDto) {
+        return getMetaDataDescribe(requestDto, null);
+    }
+
+    public List<Metadata> getMetaDataDescribe(MetadataDescribeRequestDto requestDto, SalesforceSession session) {
         List<String> normalizedNames = requestDto == null
                 ? List.of()
                 : requestDto.metadataApiNames().stream()
@@ -48,6 +65,6 @@ public class MetadataReaderService {
         if (normalizedNames.isEmpty()) {
             throw new IllegalArgumentException("metadataAPINames is required");
         }
-        return metadataApiClient.getPermissionSetDescribe(normalizedNames, requestDto.metadataType());
+        return metadataApiClient.getPermissionSetDescribe(normalizedNames, requestDto.metadataType(), session);
     }
 }

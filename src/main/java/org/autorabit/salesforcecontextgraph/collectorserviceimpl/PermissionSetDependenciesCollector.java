@@ -25,6 +25,7 @@ import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
 import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
 import org.autorabit.salesforcecontextgraph.service.MetadataReaderService;
@@ -41,9 +42,14 @@ public class PermissionSetDependenciesCollector implements CollectorService {
 
     @Override
     public List<GraphEdge> buildRelativeGraphEdges() {
-        List<String> permissionSetApiNames = metadataReaderService.listMetadataObjects("PermissionSet");
+        return buildRelativeGraphEdges(null);
+    }
+
+    public List<GraphEdge> buildRelativeGraphEdges(SalesforceSession session) {
+        List<String> permissionSetApiNames = metadataReaderService.listMetadataObjects("PermissionSet", session);
         List<Metadata> permissionSetMetadata = metadataReaderService.getMetaDataDescribe(
-                new MetadataDescribeRequestDto("PermissionSet", permissionSetApiNames)
+                new MetadataDescribeRequestDto("PermissionSet", permissionSetApiNames),
+                session
         );
 
         List<GraphEdge> edges = new ArrayList<>();
@@ -74,8 +80,12 @@ public class PermissionSetDependenciesCollector implements CollectorService {
     @Async("loadDependenciesExecutor")
     @Override
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        List<GraphEdge> edges = buildRelativeGraphEdges();
-        String orgId = Helper.resolveOrgId(metadataApiClient);
+        persistRelativeGraphEdges(requestDto, null);
+    }
+
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
+        List<GraphEdge> edges = buildRelativeGraphEdges(session);
+        String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
                 .map(edge -> Helper.buildMetadataDependency(edge, orgId))
                 .toList();

@@ -12,6 +12,7 @@ import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
 import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
@@ -41,33 +42,41 @@ public class MetadataComponentDependencyCollector implements CollectorService {
 
     @Override
     public List<GraphEdge> buildRelativeGraphEdges() {
+        return buildRelativeGraphEdges(null);
+    }
+
+    public List<GraphEdge> buildRelativeGraphEdges(SalesforceSession session) {
         if ("stub".equalsIgnoreCase(properties.getFetchMode())) {
             return fetchStubMetadata();
         }
-        return fetchDependencyMetadata();
+        return fetchDependencyMetadata(session);
     }
 
     @Async("loadDependenciesExecutor")
     @Override
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        List<GraphEdge> edges = buildRelativeGraphEdges();
+        persistRelativeGraphEdges(requestDto, null);
+    }
+
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
+        List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {
             return;
         }
 
-        String orgId = Helper.resolveOrgId(metadataApiClient);
+        String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
                 .map(edge -> Helper.buildMetadataDependency(edge, orgId))
                 .toList();
         metadataDependencyRepository.saveAll(metadataDependencies);
     }
 
-    private List<GraphEdge> fetchDependencyMetadata() {
+    private List<GraphEdge> fetchDependencyMetadata(SalesforceSession session) {
         List<Map<String, Object>> dependencyRows = toolingApiClient.query("""
                 SELECT MetadataComponentId, MetadataComponentName, MetadataComponentType,
                        RefMetadataComponentId, RefMetadataComponentName, RefMetadataComponentType
                 FROM MetadataComponentDependency
-               """);
+               """, session);
 
         List<GraphEdge> edges = new ArrayList<>();
 

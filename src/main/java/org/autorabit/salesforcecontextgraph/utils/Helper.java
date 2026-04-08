@@ -3,6 +3,7 @@ package org.autorabit.salesforcecontextgraph.utils;
 import org.autorabit.salesforcecontextgraph.db_entities.MetadataDependency;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 
 public class Helper {
 
@@ -25,5 +26,9 @@ public class Helper {
 
     public static String resolveOrgId(MetadataApiClient metadataApiClient) {
         return metadataApiClient.resolveOrgId();
+    }
+
+    public static String resolveOrgId(MetadataApiClient metadataApiClient, SalesforceSession session) {
+        return metadataApiClient.resolveOrgId(session);
     }
 }

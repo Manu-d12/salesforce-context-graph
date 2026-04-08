@@ -8,6 +8,7 @@ import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
 import org.springframework.stereotype.Service;
 
@@ -22,18 +23,26 @@ public class TargetDependencyGraphBuilder {
     private final ToolingApiClient toolingApiClient;
 
     public RuntimeGraph buildGraph(AnalysisRequestDto requestDto) {
+        return buildGraph(requestDto, null);
+    }
+
+    public RuntimeGraph buildGraph(AnalysisRequestDto requestDto, SalesforceSession session) {
         List<GraphEdge> edges = new ArrayList<>();
-        buildGraphRecursively(requestDto.targetNodes(), edges);
+        buildGraphRecursively(requestDto.targetNodes(), edges, session);
         System.out.println(edges);
         return graphBuilderAgent.build(edges);
     }
 
-    private void buildGraphRecursively(Map<NodeType, List<String>> nodeTypeListMap, List<GraphEdge> edges) {
+    private void buildGraphRecursively(
+            Map<NodeType, List<String>> nodeTypeListMap,
+            List<GraphEdge> edges,
+            SalesforceSession session
+    ) {
         if(nodeTypeListMap.isEmpty()) return;
         String soql = soqlBuilder(nodeTypeListMap);
         Map<NodeType, List<String>> nextTargetNodes = new HashMap<>();
 
-        List<Map<String, Object>> dependencies = toolingApiClient.query(soql);
+        List<Map<String, Object>> dependencies = toolingApiClient.query(soql, session);
 
         for (Map<String, Object> row : dependencies) {
             String metadataId = stringValue(row, "MetadataComponentId");
@@ -67,7 +76,7 @@ public class TargetDependencyGraphBuilder {
             else nextTargetNodes.put(refNodeType, new ArrayList<>(List.of(refId)));
         }
 
-        buildGraphRecursively(nextTargetNodes, edges);
+        buildGraphRecursively(nextTargetNodes, edges, session);
 
     }
 

@@ -7,6 +7,9 @@ import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDe
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceOAuthService;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,6 +24,7 @@ public class AnalysisOrchestratorAgent {
     private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private final PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
     private final TargetDependencyGraphBuilder targetDependencyGraphBuilder;
+    private final SalesforceOAuthService salesforceOAuthService;
 
     public AnalysisOrchestratorAgent(
             MetadataComponentDependencyCollector metadataComponentDependencyCollector,
@@ -28,7 +32,8 @@ public class AnalysisOrchestratorAgent {
             CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector,
             PermissionSetDependenciesCollector permissionSetDependenciesCollector,
             PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector,
-            TargetDependencyGraphBuilder targetDependencyGraphBuilder
+            TargetDependencyGraphBuilder targetDependencyGraphBuilder,
+            SalesforceOAuthService salesforceOAuthService
     ) {
         this.metadataComponentDependencyCollector = metadataComponentDependencyCollector;
         this.graphBuilderAgent = graphBuilderAgent;
@@ -36,13 +41,19 @@ public class AnalysisOrchestratorAgent {
         this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
         this.permissionSetGroupDependenciesCollector = permissionSetGroupDependenciesCollector;
         this.targetDependencyGraphBuilder = targetDependencyGraphBuilder;
+        this.salesforceOAuthService = salesforceOAuthService;
     }
 
     public RuntimeGraph loadOrganizationGraph() {
-        List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildRelativeGraphEdges();
-        List<GraphEdge> objectRelations = customStandardObjectDependencyCollector.buildRelativeGraphEdges();
-        List<GraphEdge> metadataEdges = metadataComponentDependencyCollector.buildRelativeGraphEdges();
-        List<GraphEdge> permissionSetGroupRelations = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges();
+        return loadOrganizationGraph(null);
+    }
+
+    public RuntimeGraph loadOrganizationGraph(SfOrgSyncRequestDto requestDto) {
+        SalesforceSession session = resolveSession(requestDto);
+        List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> objectRelations = customStandardObjectDependencyCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> metadataEdges = metadataComponentDependencyCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> permissionSetGroupRelations = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges(session);
 
         List<GraphEdge> organizationGraphEdges = new ArrayList<>();
         organizationGraphEdges.addAll(permissionSetDependencies);
@@ -56,27 +67,57 @@ public class AnalysisOrchestratorAgent {
     }
 
     public RuntimeGraph buildPermissionSetRelationGraph() {
-        List<GraphEdge> edges = permissionSetDependenciesCollector.buildRelativeGraphEdges();
+        return buildPermissionSetRelationGraph(null);
+    }
+
+    public RuntimeGraph buildPermissionSetRelationGraph(SfOrgSyncRequestDto requestDto) {
+        List<GraphEdge> edges = permissionSetDependenciesCollector.buildRelativeGraphEdges(resolveSession(requestDto));
         return graphBuilderAgent.build(
                 edges
         );
     }
 
     public RuntimeGraph buildCustomStandardObjectRelationGraph() {
-        List<GraphEdge> edges = customStandardObjectDependencyCollector.buildRelativeGraphEdges();
+        return buildCustomStandardObjectRelationGraph(null);
+    }
+
+    public RuntimeGraph buildCustomStandardObjectRelationGraph(SfOrgSyncRequestDto requestDto) {
+        List<GraphEdge> edges = customStandardObjectDependencyCollector.buildRelativeGraphEdges(resolveSession(requestDto));
         return graphBuilderAgent.build(
                 edges
         );
     }
 
     public RuntimeGraph buildPermissionGetGroupRelationGraph() {
-        List<GraphEdge> edges = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges();
+        return buildPermissionGetGroupRelationGraph(null);
+    }
+
+    public RuntimeGraph buildPermissionGetGroupRelationGraph(SfOrgSyncRequestDto requestDto) {
+        List<GraphEdge> edges = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges(resolveSession(requestDto));
         return graphBuilderAgent.build(
                 edges
         );
     }
 
     public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request) {
-        return targetDependencyGraphBuilder.buildGraph(request);
+        return runTargetMetadataAnalysis(request, null);
+    }
+
+    public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request, SfOrgSyncRequestDto authRequest) {
+        return targetDependencyGraphBuilder.buildGraph(request, resolveSession(authRequest));
+    }
+
+    private SalesforceSession resolveSession(SfOrgSyncRequestDto requestDto) {
+        if (requestDto == null) {
+            return null;
+        }
+        if (isBlank(requestDto.loginUrl()) || isBlank(requestDto.clientId()) || isBlank(requestDto.clientSecret())) {
+            return null;
+        }
+        return salesforceOAuthService.authenticate(requestDto);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

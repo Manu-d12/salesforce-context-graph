@@ -35,8 +35,12 @@ public class ToolingApiClient {
     }
 
     public List<Map<String, Object>> query(String soql) {
-        SalesforceSession session = oAuthService.authenticate();
-        String endpoint = trimTrailingSlash(session.instanceUrl())
+        return query(soql, null);
+    }
+
+    public List<Map<String, Object>> query(String soql, SalesforceSession session) {
+        SalesforceSession activeSession = session == null ? oAuthService.authenticate() : session;
+        String endpoint = trimTrailingSlash(activeSession.instanceUrl())
                 + "/services/data/"
                 + properties.getApiVersion()
                 + "/tooling/query?q="
@@ -44,7 +48,7 @@ public class ToolingApiClient {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endpoint))
-                .header("Authorization", "Bearer " + session.accessToken())
+                .header("Authorization", "Bearer " + activeSession.accessToken())
                 .header("Accept", "application/json")
                 .GET()
                 .build();

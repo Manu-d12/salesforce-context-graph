@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.config.SalesforceIntegrationProperties;
 import org.springframework.stereotype.Service;
 
@@ -30,13 +31,31 @@ public class SalesforceOAuthService {
     }
 
     public SalesforceSession authenticate() {
-        String body = buildRequestBody();
+        return authenticate(
+                properties.getLoginUrl(),
+                properties.getClientId(),
+                properties.getClientSecret()
+        );
+    }
+
+    public SalesforceSession authenticate(SfOrgSyncRequestDto requestDto) {
+        if (!hasRequestCredentials(requestDto)) {
+            return authenticate();
+        }
+        return authenticate(
+                requestDto.loginUrl(),
+                requestDto.clientId(),
+                requestDto.clientSecret()
+        );
+    }
+
+    private SalesforceSession authenticate(String loginUrl, String clientId, String clientSecret) {
+        String body = buildRequestBody(clientId, clientSecret);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(trimTrailingSlash(properties.getLoginUrl()) + "/services/oauth2/token"))
+                .uri(URI.create(trimTrailingSlash(requiredValue(loginUrl, "salesforce.login-url")) + "/services/oauth2/token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
-
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
@@ -55,11 +74,11 @@ public class SalesforceOAuthService {
         }
     }
 
-    private String buildRequestBody() {
+    private String buildRequestBody(String clientId, String clientSecret) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("grant_type", "client_credentials");
-        form.put("client_id", requiredValue(properties.getClientId(), "salesforce.client-id"));
-        form.put("client_secret", requiredValue(properties.getClientSecret(), "salesforce.client-secret"));
+        form.put("client_id", requiredValue(clientId, "salesforce.client-id"));
+        form.put("client_secret", requiredValue(clientSecret, "salesforce.client-secret"));
 
         return form.entrySet().stream()
                 .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
@@ -83,6 +102,13 @@ public class SalesforceOAuthService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private boolean hasRequestCredentials(SfOrgSyncRequestDto requestDto) {
+        return requestDto != null
+                && hasText(requestDto.loginUrl())
+                && hasText(requestDto.clientId())
+                && hasText(requestDto.clientSecret());
     }
 
     private String encode(String value) {

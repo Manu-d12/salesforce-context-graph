@@ -5,7 +5,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.autorabit.salesforcecontextgraph.api.request.AnalysisExecutionRequestDto;
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
+import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphEdgeResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphNodeResponse;
@@ -29,31 +31,31 @@ public class AnalysisController {
     }
 
     @PostMapping
-    public AnalysisGraphResponse createAnalysis() {
-        RuntimeGraph graph = orchestratorAgent.loadOrganizationGraph();
+    public AnalysisGraphResponse createAnalysis(@RequestBody SfOrgSyncRequestDto requestDto) {
+        RuntimeGraph graph = orchestratorAgent.loadOrganizationGraph(requestDto);
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
-    @GetMapping("/custom-standard-object-relations")
-    public AnalysisGraphResponse createCustomStandardObjectRelationsAnalysis() {
-        RuntimeGraph graph = orchestratorAgent.buildCustomStandardObjectRelationGraph();
+    @PostMapping("/custom-standard-object-relations")
+    public AnalysisGraphResponse createCustomStandardObjectRelationsAnalysis(@RequestBody SfOrgSyncRequestDto requestDto) {
+        RuntimeGraph graph = orchestratorAgent.buildCustomStandardObjectRelationGraph(requestDto);
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
 
 
-    @GetMapping("/permission-set-group-relations")
-    public AnalysisGraphResponse createPermissionSetGroupRelationsAnalysis() {
-        RuntimeGraph graph = orchestratorAgent.buildPermissionGetGroupRelationGraph();
+    @PostMapping("/permission-set-group-relations")
+    public AnalysisGraphResponse createPermissionSetGroupRelationsAnalysis(@RequestBody SfOrgSyncRequestDto requestDto) {
+        RuntimeGraph graph = orchestratorAgent.buildPermissionGetGroupRelationGraph(requestDto);
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
 
     }
 
-    @GetMapping("/permission-set-relations")
-    public AnalysisGraphResponse createPermissionSetRelationsAnalysis() {
-        RuntimeGraph graph = orchestratorAgent.buildPermissionSetRelationGraph();
+    @PostMapping("/permission-set-relations")
+    public AnalysisGraphResponse createPermissionSetRelationsAnalysis(@RequestBody SfOrgSyncRequestDto requestDto) {
+        RuntimeGraph graph = orchestratorAgent.buildPermissionSetRelationGraph(requestDto);
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
 
@@ -62,8 +64,11 @@ public class AnalysisController {
 
 
     @PostMapping("/target")
-    public AnalysisGraphResponse createTargetMetadataAnalysis(@RequestBody AnalysisRequestDto requestDto) {
-        RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto);
+    public AnalysisGraphResponse createTargetMetadataAnalysis(@RequestBody AnalysisExecutionRequestDto requestDto) {
+        if (requestDto == null || requestDto.analysis() == null) {
+            throw new IllegalArgumentException("analysis request is required");
+        }
+        RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto.analysis(), requestDto.salesforce());
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }

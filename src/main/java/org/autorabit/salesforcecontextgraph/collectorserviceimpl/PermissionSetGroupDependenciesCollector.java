@@ -11,6 +11,7 @@ import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
 import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
 import org.autorabit.salesforcecontextgraph.service.MetadataReaderService;
@@ -32,10 +33,15 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
 
     @Override
     public List<GraphEdge> buildRelativeGraphEdges() {
+        return buildRelativeGraphEdges(null);
+    }
+
+    public List<GraphEdge> buildRelativeGraphEdges(SalesforceSession session) {
         List<GraphEdge> edges = new ArrayList<>();
-        List<String> permissionSetGroupApiNames = metadataReaderService.listMetadataObjects("PermissionSetGroup");
+        List<String> permissionSetGroupApiNames = metadataReaderService.listMetadataObjects("PermissionSetGroup", session);
         List<Metadata> permissionSetGroupMetadata = metadataReaderService.getMetaDataDescribe(
-                new MetadataDescribeRequestDto("PermissionSetGroup", permissionSetGroupApiNames)
+                new MetadataDescribeRequestDto("PermissionSetGroup", permissionSetGroupApiNames),
+                session
         );
         for (Metadata metadataRecord : permissionSetGroupMetadata) {
             if (!(metadataRecord instanceof PermissionSetGroup permissionSetGroup)) {
@@ -65,12 +71,16 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
     @Async("loadDependenciesExecutor")
     @Override
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        List<GraphEdge> edges = buildRelativeGraphEdges();
+        persistRelativeGraphEdges(requestDto, null);
+    }
+
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
+        List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {
             return;
         }
 
-        String orgId = Helper.resolveOrgId(metadataApiClient);
+        String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
                 .map(edge -> Helper.buildMetadataDependency(edge, orgId))
                 .toList();

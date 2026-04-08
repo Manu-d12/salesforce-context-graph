@@ -13,6 +13,7 @@ import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
+import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
 import org.autorabit.salesforcecontextgraph.utils.Helper;
@@ -38,8 +39,12 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
 
     @Override
     public List<GraphEdge> buildRelativeGraphEdges() {
-        List<String> customFields = listMetadataFullNames("CustomField");
-        List<Map<String, Object>> fieldDefinitions = getFieldDefinitions(customFields);
+        return buildRelativeGraphEdges(null);
+    }
+
+    public List<GraphEdge> buildRelativeGraphEdges(SalesforceSession session) {
+        List<String> customFields = listMetadataFullNames("CustomField", session);
+        List<Map<String, Object>> fieldDefinitions = getFieldDefinitions(customFields, session);
 
         List<GraphEdge> edges = new ArrayList<>();
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
@@ -80,12 +85,16 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
     @Override
     @Async("loadDependenciesExecutor")
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        List<GraphEdge> edges = buildRelativeGraphEdges();
+        persistRelativeGraphEdges(requestDto, null);
+    }
+
+    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
+        List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {
             return;
         }
 
-        String orgId = Helper.resolveOrgId(metadataApiClient);
+        String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
                 .map(edge -> Helper.buildMetadataDependency(edge, orgId))
                 .toList();
@@ -93,16 +102,28 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
     }
 
     public List<String> listMetadataFullNames(String metadataType) {
-        return metadataApiClient.listMetadataFullNames(metadataType).stream()
+        return listMetadataFullNames(metadataType, null);
+    }
+
+    public List<String> listMetadataFullNames(String metadataType, SalesforceSession session) {
+        return metadataApiClient.listMetadataFullNames(metadataType, session).stream()
                 .sorted()
                 .toList();
     }
 
     public DescribeMetadataResult describeMetadata() {
-        return metadataApiClient.describeMetadata();
+        return describeMetadata(null);
+    }
+
+    public DescribeMetadataResult describeMetadata(SalesforceSession session) {
+        return metadataApiClient.describeMetadata(session);
     }
 
     public List<Map<String, Object>> getFieldDefinitions(List<String> fieldApiNames) {
+        return getFieldDefinitions(fieldApiNames, null);
+    }
+
+    public List<Map<String, Object>> getFieldDefinitions(List<String> fieldApiNames, SalesforceSession session) {
         if (fieldApiNames == null || fieldApiNames.isEmpty()) {
             throw new IllegalArgumentException("fieldApiNames is required");
         }
@@ -129,7 +150,7 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
                 FROM FieldDefinition
                 WHERE QualifiedApiName IN (%s)
                 AND EntityDefinition.QualifiedApiName IN (%s)
-                """.formatted(toQuotedSoqlList(fieldNames), toQuotedSoqlList(objectNames)));
+                """.formatted(toQuotedSoqlList(fieldNames), toQuotedSoqlList(objectNames)), session);
     }
 
     private String extractEntityApiName(Object entityDefinitionValue) {
