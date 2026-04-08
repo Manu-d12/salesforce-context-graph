@@ -6,14 +6,11 @@ import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataCompone
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
-import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class AnalysisOrchestratorAgent {
@@ -23,20 +20,22 @@ public class AnalysisOrchestratorAgent {
     private final CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector;
     private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private final PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
+    private final TargetDependencyGraphBuilder targetDependencyGraphBuilder;
 
     public AnalysisOrchestratorAgent(
-            RequestValidationAgent requestValidationAgent,
             MetadataComponentDependencyCollector metadataComponentDependencyCollector,
             GraphBuilderAgent graphBuilderAgent,
             CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector,
             PermissionSetDependenciesCollector permissionSetDependenciesCollector,
-            PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector
+            PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector,
+            TargetDependencyGraphBuilder targetDependencyGraphBuilder
     ) {
         this.metadataComponentDependencyCollector = metadataComponentDependencyCollector;
         this.graphBuilderAgent = graphBuilderAgent;
         this.customStandardObjectDependencyCollector = customStandardObjectDependencyCollector;
         this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
         this.permissionSetGroupDependenciesCollector = permissionSetGroupDependenciesCollector;
+        this.targetDependencyGraphBuilder = targetDependencyGraphBuilder;
     }
 
     public RuntimeGraph loadOrganizationGraph() {
@@ -78,34 +77,6 @@ public class AnalysisOrchestratorAgent {
     }
 
     public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request) {
-        RuntimeGraph fullGraph = loadOrganizationGraph();
-        GraphNode startingNode = null;
-        for (String nodeKey : fullGraph.nodes().keySet()) {
-            GraphNode node = fullGraph.nodes().get(nodeKey);
-            if (node.name().equals(request.targetName()) && node.type().equals(request.targetType().toString())) {
-                startingNode = node;
-                break;
-            }
-        }
-
-        if (startingNode == null) {
-            throw new IllegalArgumentException("Target metadata not found: " + request.targetName());
-        }
-
-        List<GraphEdge> targetEdges = new ArrayList<>();
-        Set<String> visitedNodeId = new HashSet<>();
-        collectTargetEdges(startingNode, fullGraph, targetEdges, visitedNodeId);
-        return graphBuilderAgent.build(targetEdges);
-    }
-
-    private void collectTargetEdges(GraphNode node, RuntimeGraph graph, List<GraphEdge> targetEdges, Set<String> visitedNodeId) {
-        visitedNodeId.add(node.id());
-        for (GraphEdge edge : graph.edges().getOrDefault(node.id(), List.of())) {
-            targetEdges.add(edge);
-            String nbrNodeId = edge.toNode().id();
-            if (!visitedNodeId.contains(nbrNodeId)) {
-                collectTargetEdges(graph.nodes().get(nbrNodeId), graph, targetEdges, visitedNodeId);
-            }
-        }
+        return targetDependencyGraphBuilder.buildGraph(request);
     }
 }

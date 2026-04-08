@@ -22,6 +22,7 @@ import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
 import org.autorabit.salesforcecontextgraph.service.MetadataReaderService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -59,6 +60,12 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             processTabSettings(permissionSetNode, permissionSet.getTabSettings(), edges, edgeKeys);
         }
         return edges;
+    }
+
+    @Async("loadDependenciesExecutor")
+    @Override
+    public void persistRelativeGraphEdges() {
+
     }
 
     private void processApplicationVisibilities(

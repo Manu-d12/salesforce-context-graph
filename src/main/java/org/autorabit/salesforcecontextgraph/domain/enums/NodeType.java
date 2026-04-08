@@ -28,6 +28,7 @@ public enum NodeType {
     CUSTOM_TAB("CustomTab"),
     FLEXI_PAGE("FlexiPage"),
     WEB_LINK("WebLink"),
+    CUSTOM_LABEL("CustomLabel"),
     CUSTOM_APPLICATION("CustomApplication");
 
     private final String metadatatype;

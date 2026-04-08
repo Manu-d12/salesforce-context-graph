@@ -11,6 +11,7 @@ import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -66,6 +67,12 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
             edges.add(new GraphEdge(fromNode, toReferencedNode, EdgeType.REFERENCES.toString()));
         }
         return edges;
+    }
+
+    @Override
+    @Async("loadDependenciesExecutor")
+    public void persistRelativeGraphEdges() {
+
     }
 
     public List<String> listMetadataFullNames(String metadataType) {

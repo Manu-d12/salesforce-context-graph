@@ -2,7 +2,6 @@ package org.autorabit.salesforcecontextgraph.api.controller;
 
 import com.sforce.soap.metadata.DescribeMetadataResult;
 import com.sforce.soap.metadata.Metadata;
-import com.sforce.soap.metadata.PermissionSet;
 import java.util.List;
 import java.util.Map;
 import org.autorabit.salesforcecontextgraph.api.request.FieldDefinitionsRequestDto;

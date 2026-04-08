@@ -40,4 +40,5 @@ public class GraphBuilderAgent {
     public RuntimeGraph build(List<GraphEdge> edges) {
         return build(List.of(), edges);
     }
+
 }

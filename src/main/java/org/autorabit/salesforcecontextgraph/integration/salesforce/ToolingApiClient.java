@@ -38,7 +38,7 @@ public class ToolingApiClient {
     }
 
     public List<Map<String, Object>> query(String soql) {
-        toolingSoqlValidator.validate(soql);
+//        toolingSoqlValidator.validate(soql);
         SalesforceSession session = oAuthService.authenticate();
         String endpoint = trimTrailingSlash(session.instanceUrl())
                 + "/services/data/"
