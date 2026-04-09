@@ -101,8 +101,8 @@ public class MetadataComponentDependencyCollector implements CollectorService {
                     : refType;
 
             edges.add(new GraphEdge(
-                    new GraphNode(metadataId, parentMetadataType, metadataName),
-                    new GraphNode(refId, childMetadataType, refName),
+                    new GraphNode(metadataName, parentMetadataType, metadataName),
+                    new GraphNode(refName, childMetadataType, refName),
                     EdgeResolverService.resolve(metadataType, refType).toString()
             ));
         }

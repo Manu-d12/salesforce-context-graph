@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisExecutionRequestDto;
-import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
 import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
 import org.autorabit.salesforcecontextgraph.api.response.GraphEdgeResponse;

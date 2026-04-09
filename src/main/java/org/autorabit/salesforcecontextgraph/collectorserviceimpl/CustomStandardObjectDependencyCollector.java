@@ -49,6 +49,7 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
         List<GraphEdge> edges = new ArrayList<>();
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
             String fieldName = stringValue(fieldDefinition.get("QualifiedApiName"));
+//            String
             String objectApiName = extractEntityApiName(fieldDefinition.get("EntityDefinition"));
             if (objectApiName == null) {
                 continue;
@@ -61,7 +62,7 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
             );
 
             GraphNode toParentNode = new GraphNode(
-                    objectApiName + " - " + NodeType.STANDARD_OBJECT,
+                    resolveObjectType(fieldName).toString(),
                     resolveObjectType(fieldName).toString(),
                     objectApiName + " - " + NodeType.STANDARD_OBJECT
             );

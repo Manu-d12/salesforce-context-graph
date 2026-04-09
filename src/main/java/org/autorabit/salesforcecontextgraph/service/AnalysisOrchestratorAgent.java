@@ -44,10 +44,6 @@ public class AnalysisOrchestratorAgent {
         this.salesforceOAuthService = salesforceOAuthService;
     }
 
-    public RuntimeGraph loadOrganizationGraph() {
-        return loadOrganizationGraph(null);
-    }
-
     public RuntimeGraph loadOrganizationGraph(SfOrgSyncRequestDto requestDto) {
         SalesforceSession session = resolveSession(requestDto);
         List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildRelativeGraphEdges(session);
@@ -66,19 +62,11 @@ public class AnalysisOrchestratorAgent {
         );
     }
 
-    public RuntimeGraph buildPermissionSetRelationGraph() {
-        return buildPermissionSetRelationGraph(null);
-    }
-
     public RuntimeGraph buildPermissionSetRelationGraph(SfOrgSyncRequestDto requestDto) {
         List<GraphEdge> edges = permissionSetDependenciesCollector.buildRelativeGraphEdges(resolveSession(requestDto));
         return graphBuilderAgent.build(
                 edges
         );
-    }
-
-    public RuntimeGraph buildCustomStandardObjectRelationGraph() {
-        return buildCustomStandardObjectRelationGraph(null);
     }
 
     public RuntimeGraph buildCustomStandardObjectRelationGraph(SfOrgSyncRequestDto requestDto) {
@@ -88,19 +76,11 @@ public class AnalysisOrchestratorAgent {
         );
     }
 
-    public RuntimeGraph buildPermissionGetGroupRelationGraph() {
-        return buildPermissionGetGroupRelationGraph(null);
-    }
-
     public RuntimeGraph buildPermissionGetGroupRelationGraph(SfOrgSyncRequestDto requestDto) {
         List<GraphEdge> edges = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges(resolveSession(requestDto));
         return graphBuilderAgent.build(
                 edges
         );
-    }
-
-    public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request) {
-        return runTargetMetadataAnalysis(request, null);
     }
 
     public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request, SfOrgSyncRequestDto authRequest) {
