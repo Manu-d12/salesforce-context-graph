@@ -1,7 +1,6 @@
 package org.autorabit.salesforcecontextgraph.api.controller;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +65,7 @@ public class AnalysisController {
         if (requestDto == null || requestDto.analysis() == null) {
             throw new IllegalArgumentException("analysis request is required");
         }
-        RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto.analysis(), requestDto.salesforce());
+        RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto.analysis());
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
         return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
     }
@@ -86,15 +85,6 @@ public class AnalysisController {
         return nodes.values().stream()
                 .map(this::toNodeResponse)
                 .toList();
-    }
-
-    private List<GraphNodeResponse> toNodeResponses(List<GraphEdge> edges) {
-        Map<String, GraphNode> nodes = new LinkedHashMap<>();
-        for (GraphEdge edge : edges) {
-            nodes.put(edge.fromNode().id(), edge.fromNode());
-            nodes.put(edge.toNode().id(), edge.toNode());
-        }
-        return toNodeResponses(nodes);
     }
 
     private List<GraphEdgeResponse> flattenEdges(Map<String, List<GraphEdge>> adjacency) {

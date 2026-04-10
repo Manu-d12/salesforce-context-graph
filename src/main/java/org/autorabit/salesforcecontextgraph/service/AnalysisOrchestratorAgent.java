@@ -83,8 +83,8 @@ public class AnalysisOrchestratorAgent {
         );
     }
 
-    public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request, SfOrgSyncRequestDto authRequest) {
-        return targetDependencyGraphBuilder.buildGraph(request, resolveSession(authRequest));
+    public RuntimeGraph runTargetMetadataAnalysis(AnalysisRequestDto request) {
+        return targetDependencyGraphBuilder.buildGraph(request, request.sfOrgId());
     }
 
     private SalesforceSession resolveSession(SfOrgSyncRequestDto requestDto) {

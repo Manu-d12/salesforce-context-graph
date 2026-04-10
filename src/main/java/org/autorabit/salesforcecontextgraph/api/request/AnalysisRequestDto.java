@@ -8,6 +8,7 @@ import java.util.Map;
 
 public record AnalysisRequestDto (
         AnalysisType analysisType,
-        Map<NodeType, List<String>> targetNodes
+        Map<NodeType, List<String>> targetNodes,
+        String sfOrgId
 ) {
 }

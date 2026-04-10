@@ -9,9 +9,7 @@ import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
-import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
-import org.autorabit.salesforcecontextgraph.utils.Helper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -26,9 +24,8 @@ public class TargetDependencyGraphBuilder {
     private final MetadataDependencyRepository metadataDependencyRepository;
     private final GraphBuilderAgent graphBuilderAgent;
 
-    public RuntimeGraph buildGraph(AnalysisRequestDto requestDto, SalesforceSession session) {
+    public RuntimeGraph buildGraph(AnalysisRequestDto requestDto, String sfOrgId) {
         List<GraphEdge> edges = new ArrayList<>();
-        String sfOrgId = Helper.resolveOrgId(metadataApiClient, session);
         Map<String, Set<String>> targetNodes = normalizeTargets(requestDto);
         buildGraphRecursively(targetNodes, edges, sfOrgId, new HashSet<>(), new HashSet<>());
         return graphBuilderAgent.build(edges);
@@ -163,7 +160,7 @@ public class TargetDependencyGraphBuilder {
             }
             firstType = false;
 
-            if (entry.getValue().toString().equals("$All")) {
+            if (entry.getValue().contains("$All")) {
                 sql.append("(metadata_type = '").append(escapeSql(entry.getKey())).append("')");
                 continue;
             }
