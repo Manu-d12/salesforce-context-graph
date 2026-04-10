@@ -49,36 +49,29 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
         List<GraphEdge> edges = new ArrayList<>();
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
             String fieldName = stringValue(fieldDefinition.get("QualifiedApiName"));
-//            String
             String objectApiName = extractEntityApiName(fieldDefinition.get("EntityDefinition"));
             if (objectApiName == null) {
                 continue;
             }
 
-            GraphNode fromNode = new GraphNode(
-                    objectApiName + "." + fieldName + " - " + NodeType.CUSTOM_FIELD,
-                    NodeType.CUSTOM_FIELD.toString(),
-                    fieldName
-            );
+            String fieldType = stringValue(fieldDefinition.get("DataType"));
+            boolean isMasterDetail = fieldType != null && fieldType.startsWith("Master-Detail");
 
-            GraphNode toParentNode = new GraphNode(
-                    resolveObjectType(fieldName).toString(),
-                    resolveObjectType(fieldName).toString(),
-                    objectApiName + " - " + NodeType.STANDARD_OBJECT
-            );
-            edges.add(new GraphEdge(fromNode, toParentNode, EdgeType.REFERENCES.toString()));
+            String fullFieldName = objectApiName + "." + fieldName;
+
+            GraphNode fromNode = GraphNode.buildGraphNode(fullFieldName, NodeType.CUSTOM_FIELD.toString());
+
+            GraphNode toParentNode = GraphNode.buildGraphNode(objectApiName, resolveObjectType(objectApiName).toString());
+
+            edges.add(new GraphEdge(fromNode, toParentNode, EdgeType.PARENT.toString()));
 
             String referencedObject = extractFirstReferenceTarget(fieldDefinition);
             if (referencedObject == null) {
                 continue;
             }
 
-            GraphNode toReferencedNode = new GraphNode(
-                    referencedObject + " - " + resolveObjectType(referencedObject),
-                    resolveObjectType(referencedObject).toString(),
-                    referencedObject + " - " + resolveObjectType(referencedObject)
-            );
-            edges.add(new GraphEdge(fromNode, toReferencedNode, EdgeType.REFERENCES.toString()));
+            GraphNode toReferencedNode = GraphNode.buildGraphNode(referencedObject, resolveObjectType(referencedObject).toString());
+            edges.add(new GraphEdge(fromNode, toReferencedNode, isMasterDetail ? EdgeType.MASTER_DETAIL.toString() : EdgeType.LOOK_UP.toString()));
         }
         return edges;
     }
@@ -97,7 +90,7 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
 
         String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
-                .map(edge -> Helper.buildMetadataDependency(edge, orgId))
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId, "CUSTOM_STANDARD_OBJECT_COLLECTOR"))
                 .toList();
         metadataDependencyRepository.saveAll(metadataDependencies);
     }

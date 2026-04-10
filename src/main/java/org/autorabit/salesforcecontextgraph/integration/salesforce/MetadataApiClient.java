@@ -3,6 +3,7 @@ package org.autorabit.salesforcecontextgraph.integration.salesforce;
 import com.sforce.soap.metadata.*;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,6 +14,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class MetadataApiClient {
 
+    public record MetadataIdentifier (
+            String id,
+            String fullName
+    ) {
+    }
+
     private final SalesforceOAuthService oAuthService;
     private final SalesforceIntegrationProperties properties;
 
@@ -22,10 +29,6 @@ public class MetadataApiClient {
     ) {
         this.oAuthService = oAuthService;
         this.properties = properties;
-    }
-
-    public List<Metadata> getPermissionSetDescribe(List<String> metadataApiNames, String metadataType) {
-        return getPermissionSetDescribe(metadataApiNames, metadataType, null);
     }
 
     public List<Metadata> getPermissionSetDescribe(
@@ -53,11 +56,29 @@ public class MetadataApiClient {
         }
     }
 
-    public List<String> listMetadataFullNames(String metadataType) {
-        return listMetadataFullNames(metadataType, null);
+    public List<String> listMetadataFullNames(String metadataType, SalesforceSession session) {
+        return listMetadataFileProperties(metadataType, session).stream()
+                .map(FileProperties::getFullName)
+                .filter(this::hasText)
+                .toList();
     }
 
-    public List<String> listMetadataFullNames(String metadataType, SalesforceSession session) {
+    public List<MetadataIdentifier> listMetadataIdentifiers(String metadataType) {
+        return listMetadataIdentifiers(metadataType, null);
+    }
+
+    public List<MetadataIdentifier> listMetadataIdentifiers(String metadataType, SalesforceSession session) {
+        return listMetadataFileProperties(metadataType, session).stream()
+                .map(fileProperties -> new MetadataIdentifier(
+                        normalizeMetadataId(fileProperties.getId()),
+                        normalizeMetadataFullName(fileProperties.getFullName())
+                ))
+                .filter(metadataIdentifier -> hasText(metadataIdentifier.id())
+                        || hasText(metadataIdentifier.fullName()))
+                .toList();
+    }
+
+    private List<FileProperties> listMetadataFileProperties(String metadataType, SalesforceSession session) {
         try {
             MetadataConnection metadataConnection = createConnection(session);
             ListMetadataQuery query = new ListMetadataQuery();
@@ -69,24 +90,20 @@ public class MetadataApiClient {
                     apiVersion
             );
 
-            List<String> fullNames = new ArrayList<>();
+            List<FileProperties> filePropertiesList = new ArrayList<>();
             if (properties == null) {
-                return fullNames;
+                return filePropertiesList;
             }
 
             for (FileProperties fileProperties : properties) {
-                if (fileProperties != null && hasText(fileProperties.getFullName())) {
-                    fullNames.add(fileProperties.getFullName());
+                if (fileProperties != null) {
+                    filePropertiesList.add(fileProperties);
                 }
             }
-            return fullNames;
+            return filePropertiesList;
         } catch (ConnectionException ex) {
             throw new IllegalStateException("Metadata API listMetadata failed", ex);
         }
-    }
-
-    public DescribeMetadataResult describeMetadata() {
-        return describeMetadata(null);
     }
 
     public DescribeMetadataResult describeMetadata(SalesforceSession session) {
@@ -158,6 +175,14 @@ public class MetadataApiClient {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String normalizeMetadataId(String value) {
+        return hasText(value) ? value : null;
+    }
+
+    private String normalizeMetadataFullName(String value) {
+        return hasText(value) ? value : null;
     }
 
     private String extractOrgId(String idUrl) {

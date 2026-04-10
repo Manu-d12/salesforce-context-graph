@@ -1,5 +1,6 @@
 package org.autorabit.salesforcecontextgraph.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
@@ -10,6 +11,7 @@ import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceOAu
 import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Service
 @AllArgsConstructor
@@ -29,5 +31,4 @@ public class SyncOrgMetadataService {
         permissionSetDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
         permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
     }
-
 }

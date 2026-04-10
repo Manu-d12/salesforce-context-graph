@@ -2,10 +2,8 @@ package org.autorabit.salesforcecontextgraph.service;
 
 import com.sforce.soap.metadata.DescribeMetadataResult;
 import com.sforce.soap.metadata.Metadata;
-
 import java.util.List;
 import java.util.Map;
-
 import org.autorabit.salesforcecontextgraph.api.request.MetadataDescribeRequestDto;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiClient;
@@ -32,6 +30,17 @@ public class MetadataReaderService {
 
     public List<String> listMetadataObjects(String metadataType, SalesforceSession session) {
         return collector.listMetadataFullNames(metadataType, session);
+    }
+
+    public List<MetadataApiClient.MetadataIdentifier> listMetadataIdentifiers(String metadataType) {
+        return listMetadataIdentifiers(metadataType, null);
+    }
+
+    public List<MetadataApiClient.MetadataIdentifier> listMetadataIdentifiers(
+            String metadataType,
+            SalesforceSession session
+    ) {
+        return metadataApiClient.listMetadataIdentifiers(metadataType, session);
     }
 
     public DescribeMetadataResult describeMetadata() {

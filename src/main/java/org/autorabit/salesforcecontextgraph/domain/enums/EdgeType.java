@@ -2,6 +2,9 @@ package org.autorabit.salesforcecontextgraph.domain.enums;
 
 public enum EdgeType {
     DEPENDS_ON,
+    LOOK_UP,
+    MASTER_DETAIL,
+    PARENT,
     CALLS,
     USES,
     REFERENCES,

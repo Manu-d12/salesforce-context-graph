@@ -40,4 +40,7 @@ public class MetadataDependency {
 
     @Column(name = "edge_type")
     private String edgeType; // kind of dependency
+
+    @Column(name = "edge_source")
+    private String edgeSource;
 }

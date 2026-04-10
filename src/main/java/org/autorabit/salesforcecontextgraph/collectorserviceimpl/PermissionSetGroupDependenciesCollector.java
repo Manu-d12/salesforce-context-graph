@@ -52,9 +52,9 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
                 continue;
             }
 
-            GraphNode fromNode = GraphNode.buildGraphNode(permissionSetGroup.getFullName(), NodeType.PERMISSION_SET_GROUP.toString(), permissionSetGroup.getFullName());
+            GraphNode fromNode = GraphNode.buildGraphNode(permissionSetGroup.getFullName(), NodeType.PERMISSION_SET_GROUP.toString());
             for(String permissionSet : permissionSets) {
-                GraphNode toNode = GraphNode.buildGraphNode(permissionSet, NodeType.PERMISSION_SET.toString(), permissionSet);
+                GraphNode toNode = GraphNode.buildGraphNode(permissionSet, NodeType.PERMISSION_SET.toString());
                 edges.add (
                         new GraphEdge (
                                 fromNode,
@@ -82,7 +82,7 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
 
         String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
-                .map(edge -> Helper.buildMetadataDependency(edge, orgId))
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId, "PERMISSION_SET_GROUP_DEPENDENCIES_COLLECTOR"))
                 .toList();
         metadataDependencyRepository.saveAll(metadataDependencies);
     }

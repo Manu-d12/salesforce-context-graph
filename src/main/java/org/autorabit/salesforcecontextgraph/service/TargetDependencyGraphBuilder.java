@@ -1,13 +1,10 @@
 package org.autorabit.salesforcecontextgraph.service;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
 import org.autorabit.salesforcecontextgraph.db_entities.MetadataDependency;
-import org.autorabit.salesforcecontextgraph.domain.enums.AnalysisType;
-import org.autorabit.salesforcecontextgraph.domain.enums.NodeType;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
@@ -129,15 +126,13 @@ public class TargetDependencyGraphBuilder {
     }
 
     private GraphEdge toGraphEdge(MetadataDependency dependency) {
-        GraphNode fromNode = new GraphNode(
+        GraphNode fromNode = GraphNode.buildGraphNode(
                 dependency.getMetadataName(),
-                dependency.getMetadataType(),
-                dependency.getMetadataLabel()
+                dependency.getMetadataType()
         );
-        GraphNode toNode = new GraphNode(
+        GraphNode toNode = GraphNode.buildGraphNode(
                 dependency.getRefMetadataName(),
-                dependency.getRefMetadataType(),
-                dependency.getRefMetadataLabel()
+                dependency.getRefMetadataType()
         );
         return new GraphEdge(fromNode, toNode, dependency.getEdgeType());
     }
@@ -152,7 +147,7 @@ public class TargetDependencyGraphBuilder {
 
     private String sqlBuilder(Map<String, Set<String>> metadataMap, String sfOrgId) {
         StringBuilder sql = new StringBuilder("""
-                SELECT id, org_id, metadata_type, metadata_name, metadata_label,
+                SELECT id, org_id, edge_source, metadata_type, metadata_name, metadata_label,
                        ref_metadata_type, ref_metadata_name, ref_metadata_label, edge_type
                 FROM metadata_dependency
                 WHERE org_id = '""");
@@ -168,12 +163,18 @@ public class TargetDependencyGraphBuilder {
             }
             firstType = false;
 
+            if (entry.getValue().toString().equals("$All")) {
+                sql.append("(metadata_type = '").append(escapeSql(entry.getKey())).append("')");
+                continue;
+            }
+
             sql.append("(metadata_type = '")
                     .append(escapeSql(entry.getKey()))
                     .append("' AND metadata_name IN (");
 
             boolean firstName = true;
             for (String metadataName : entry.getValue()) {
+
                 if (!firstName) {
                     sql.append(", ");
                 }
@@ -191,14 +192,4 @@ public class TargetDependencyGraphBuilder {
         return value.replace("'", "''");
     }
 
-    @PostConstruct
-    public void init() {
-        Map<NodeType, List<String>> metadataMap = new HashMap<>();
-
-        metadataMap.put(NodeType.PERMISSION_SET_GROUP, List.of("MyPermissionSetGroup - PERMISSION_SET_GROUP"));
-//        metadataMap.put(NodeType.LWC, List.of("DynamicTable", "HelloWorld", "DynamicRow", "GreetingLWC"));
-
-        AnalysisRequestDto requestDto = new AnalysisRequestDto(AnalysisType.DEPENDENCY, metadataMap);
-        buildGraph(requestDto, null);
-    }
 }

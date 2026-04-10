@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.autorabit.salesforcecontextgraph.api.request.FieldDefinitionsRequestDto;
 import org.autorabit.salesforcecontextgraph.api.request.MetadataDescribeRequestDto;
+import org.autorabit.salesforcecontextgraph.api.response.MetadataIdentifiersResponse;
 import org.autorabit.salesforcecontextgraph.api.response.MetadataObjectsResponse;
 import org.autorabit.salesforcecontextgraph.service.MetadataReaderService;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,11 @@ public class MetaDataReaderController {
     @GetMapping("/{metadataType}")
     public MetadataObjectsResponse listMetadataObjects(@PathVariable String metadataType) {
         return new MetadataObjectsResponse(metadataReaderService.listMetadataObjects(metadataType));
+    }
+
+    @GetMapping("/{metadataType}/identifiers")
+    public MetadataIdentifiersResponse listMetadataIdentifiers(@PathVariable String metadataType) {
+        return new MetadataIdentifiersResponse(metadataReaderService.listMetadataIdentifiers(metadataType));
     }
 
     @GetMapping("/describe")

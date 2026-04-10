@@ -58,12 +58,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
                 continue;
             }
 
-            GraphNode permissionSetNode = new GraphNode(
-                    permissionSet.getFullName() + " - " + NodeType.PERMISSION_SET.toString(),
-                    NodeType.PERMISSION_SET.toString(),
-                    hasText(permissionSet.getLabel()) ? permissionSet.getLabel() : permissionSet.getFullName()
-            );
-
+            GraphNode permissionSetNode = GraphNode.buildGraphNode(permissionSet.getFullName(), NodeType.PERMISSION_SET.toString());
             processApplicationVisibilities(permissionSetNode, permissionSet.getApplicationVisibilities(), edges, edgeKeys);
             processClassAccesses(permissionSetNode, permissionSet.getClassAccesses(), edges, edgeKeys);
             processCustomMetadataTypeAccesses(permissionSetNode, permissionSet.getCustomMetadataTypeAccesses(), edges, edgeKeys);
@@ -86,7 +81,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
         List<GraphEdge> edges = buildRelativeGraphEdges(session);
         String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
-                .map(edge -> Helper.buildMetadataDependency(edge, orgId))
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId, "PERMISSION_SET_DEPENDENCIES_COLLECTOR"))
                 .toList();
 
         metadataDependencyRepository.saveAll(metadataDependencies);
@@ -106,7 +101,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (visibility == null) {
                 continue;
             }
-            addEdge(permissionSetNode, visibility.getApplication() + " - " + NodeType.CUSTOM_APPLICATION, NodeType.CUSTOM_APPLICATION, edges, edgeKeys);
+            addEdge(permissionSetNode, visibility.getApplication(), NodeType.CUSTOM_APPLICATION, edges, edgeKeys);
         }
     }
 
@@ -123,7 +118,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (classAccess == null) {
                 continue;
             }
-            addEdge(permissionSetNode, classAccess.getApexClass() +  " - " + NodeType.APEX_CLASS, NodeType.APEX_CLASS, edges, edgeKeys);
+            addEdge(permissionSetNode, classAccess.getApexClass(), NodeType.APEX_CLASS, edges, edgeKeys);
         }
     }
 
@@ -140,7 +135,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (access == null) {
                 continue;
             }
-            addEdge(permissionSetNode, access.getName() +  " - " + NodeType.CUSTOM_METADATA_TYPE, NodeType.CUSTOM_METADATA_TYPE, edges, edgeKeys);
+            addEdge(permissionSetNode, access.getName(), NodeType.CUSTOM_METADATA_TYPE, edges, edgeKeys);
         }
     }
 
@@ -157,7 +152,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (access == null) {
                 continue;
             }
-            addEdge(permissionSetNode, access.getName() +  " - " + NodeType.CUSTOM_SETTINGS, NodeType.CUSTOM_SETTINGS, edges, edgeKeys);
+            addEdge(permissionSetNode, access.getName(), NodeType.CUSTOM_SETTINGS, edges, edgeKeys);
         }
     }
 
@@ -174,7 +169,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (fieldPermission == null) {
                 continue;
             }
-            addEdge(permissionSetNode, fieldPermission.getField()  +  " - " + NodeType.CUSTOM_FIELD, NodeType.CUSTOM_FIELD, edges, edgeKeys);
+            addEdge(permissionSetNode, fieldPermission.getField(), NodeType.CUSTOM_FIELD, edges, edgeKeys);
         }
     }
 
@@ -193,7 +188,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             }
             addEdge(
                     permissionSetNode,
-                    objectPermission.getObject() +  " - " + resolveObjectType(objectPermission.getObject()),
+                    objectPermission.getObject(),
                     resolveObjectType(objectPermission.getObject()),
                     edges,
                     edgeKeys
@@ -214,7 +209,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (flowAccess == null) {
                 continue;
             }
-            addEdge(permissionSetNode, flowAccess.getFlow() + " - " + NodeType.FLOW, NodeType.FLOW, edges, edgeKeys);
+            addEdge(permissionSetNode, flowAccess.getFlow(), NodeType.FLOW, edges, edgeKeys);
         }
     }
 
@@ -231,7 +226,7 @@ public class PermissionSetDependenciesCollector implements CollectorService {
             if (tabSetting == null) {
                 continue;
             }
-            addEdge(permissionSetNode, tabSetting.getTab() + " - " + NodeType.CUSTOM_TAB, NodeType.CUSTOM_TAB, edges, edgeKeys);
+            addEdge(permissionSetNode, tabSetting.getTab(), NodeType.CUSTOM_TAB, edges, edgeKeys);
         }
     }
 

@@ -23,7 +23,7 @@ public class ToolingApiClient {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
-    public ToolingApiClient(
+    public ToolingApiClient (
             SalesforceOAuthService oAuthService,
             SalesforceIntegrationProperties properties,
             ObjectMapper objectMapper

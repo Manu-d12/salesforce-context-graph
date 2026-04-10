@@ -1,6 +1,7 @@
 package org.autorabit.salesforcecontextgraph.collectorserviceimpl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSes
 import org.autorabit.salesforcecontextgraph.integration.salesforce.ToolingApiClient;
 import org.autorabit.salesforcecontextgraph.repository.MetadataDependencyRepository;
 import org.autorabit.salesforcecontextgraph.service.EdgeResolverService;
+import org.autorabit.salesforcecontextgraph.service.MetadataReaderService;
 import org.autorabit.salesforcecontextgraph.utils.Helper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -27,17 +29,20 @@ public class MetadataComponentDependencyCollector implements CollectorService {
     private final MetadataApiClient metadataApiClient;
     private final MetadataDependencyRepository metadataDependencyRepository;
     private final SalesforceIntegrationProperties properties;
+    private final MetadataReaderService readerService;
 
-    public MetadataComponentDependencyCollector(
+    public MetadataComponentDependencyCollector (
             ToolingApiClient toolingApiClient,
             MetadataApiClient metadataApiClient,
             MetadataDependencyRepository metadataDependencyRepository,
-            SalesforceIntegrationProperties properties
+            SalesforceIntegrationProperties properties,
+            MetadataReaderService readerService
     ) {
         this.toolingApiClient = toolingApiClient;
         this.metadataApiClient = metadataApiClient;
         this.metadataDependencyRepository = metadataDependencyRepository;
         this.properties = properties;
+        this.readerService = readerService;
     }
 
     @Override
@@ -66,10 +71,12 @@ public class MetadataComponentDependencyCollector implements CollectorService {
 
         String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
-                .map(edge -> Helper.buildMetadataDependency(edge, orgId))
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId, "METADATA_COMPONENT_DEPENDENCY_COLLECTOR"))
                 .toList();
         metadataDependencyRepository.saveAll(metadataDependencies);
     }
+
+
 
     private List<GraphEdge> fetchDependencyMetadata(SalesforceSession session) {
         List<Map<String, Object>> dependencyRows = toolingApiClient.query("""
@@ -80,31 +87,48 @@ public class MetadataComponentDependencyCollector implements CollectorService {
 
         List<GraphEdge> edges = new ArrayList<>();
 
+        Map<String, String> componentIdFullNameMap = new HashMap<>();
+
         for (Map<String, Object> row : dependencyRows) {
-            String metadataId = stringValue(row, "MetadataComponentId");
-            String metadataName = stringValue(row, "MetadataComponentName");
-            String metadataType = stringValue(row, "MetadataComponentType");
-            String refId = stringValue(row, "RefMetadataComponentId");
-            String refName = stringValue(row, "RefMetadataComponentName");
-            String refType = stringValue(row, "RefMetadataComponentType");
+            try {
+                String metadataId = stringValue(row, "MetadataComponentId");
+                String metadataName = stringValue(row, "MetadataComponentName");
+                String metadataType = stringValue(row, "MetadataComponentType").equals("StandardEntity") ? "CustomObject" : stringValue(row, "MetadataComponentType");
+                String refId = stringValue(row, "RefMetadataComponentId");
+                String refName = stringValue(row, "RefMetadataComponentName");
+                String refType = stringValue(row, "RefMetadataComponentType").equals("StandardEntity") ? "CustomObject" : stringValue(row, "RefMetadataComponentType");
 
-            if (metadataId == null || metadataName == null || metadataType == null
-                    || refId == null || refName == null || refType == null) {
-                continue;
-            }
+                if (metadataId == null || metadataName == null || metadataType == null
+                        || refId == null || refName == null || refType == null) {
+                    continue;
+                }
 
-            String parentMetadataType = NodeType.getNodeType(metadataType) != null
-                    ? NodeType.getNodeType(metadataType).toString()
-                    : metadataType;
-            String childMetadataType = NodeType.getNodeType(refType) != null
-                    ? NodeType.getNodeType(refType).toString()
-                    : refType;
+                if(!componentIdFullNameMap.containsKey(metadataId)) {
+                    List<MetadataApiClient.MetadataIdentifier> metadataIdentifiers = readerService.listMetadataIdentifiers(metadataType, session);
+                    metadataIdentifiers.forEach(metadataIdentifier -> componentIdFullNameMap.put(metadataIdentifier.id(), metadataIdentifier.fullName()));
+                }
 
-            edges.add(new GraphEdge(
-                    new GraphNode(metadataName, parentMetadataType, metadataName),
-                    new GraphNode(refName, childMetadataType, refName),
-                    EdgeResolverService.resolve(metadataType, refType).toString()
-            ));
+                if(!componentIdFullNameMap.containsKey(refId)) {
+                    List<MetadataApiClient.MetadataIdentifier> metadataIdentifiers = readerService.listMetadataIdentifiers(refType, session);
+                    metadataIdentifiers.forEach(metadataIdentifier -> componentIdFullNameMap.put(metadataIdentifier.id(), metadataIdentifier.fullName()));
+                }
+
+                String parentMetadataType = NodeType.getNodeType(metadataType) != null
+                        ? NodeType.getNodeType(metadataType).toString()
+                        : metadataType;
+                String childMetadataType = NodeType.getNodeType(refType) != null
+                        ? NodeType.getNodeType(refType).toString()
+                        : refType;
+
+                String fromNodeFullName = componentIdFullNameMap.get(metadataId) == null ? metadataName : componentIdFullNameMap.get(metadataId);
+                String toNodeFullName = componentIdFullNameMap.get(refId) == null ? refName : componentIdFullNameMap.get(refId);
+
+                edges.add(new GraphEdge(
+                        GraphNode.buildGraphNode(fromNodeFullName, parentMetadataType),
+                        GraphNode.buildGraphNode(toNodeFullName, childMetadataType),
+                        EdgeResolverService.resolve(metadataType, refType).toString()
+                ));
+            } catch (Exception ignored) {}
         }
         return edges;
     }
