@@ -27,11 +27,14 @@ public class SyncOrgMetadataService {
 
     @Async("loadDependenciesExecutor")
     public void sync(SfOrgSyncRequestDto requestDto) {
+
+
+        // need to add CustomApplicationDependencyCollector
         SalesforceSession session = salesforceOAuthService.authenticate(requestDto);
         metadataComponentDependencyCollector.persistRelativeGraphEdges(requestDto, session);
         customStandardObjectDependencyCollector.persistRelativeGraphEdges(requestDto, session);
         permissionSetDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
         permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
-        profileDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
+//        profileDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
     }
 }
