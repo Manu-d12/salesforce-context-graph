@@ -7,6 +7,7 @@ import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardO
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataComponentDependencyCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.ProfileDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceOAuthService;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.springframework.scheduling.annotation.Async;
@@ -22,6 +23,7 @@ public class SyncOrgMetadataService {
     private final SalesforceOAuthService salesforceOAuthService;
     private PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
+    private ProfileDependenciesCollector profileDependenciesCollector;
 
     @Async("loadDependenciesExecutor")
     public void sync(SfOrgSyncRequestDto requestDto) {
@@ -30,5 +32,6 @@ public class SyncOrgMetadataService {
         customStandardObjectDependencyCollector.persistRelativeGraphEdges(requestDto, session);
         permissionSetDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
         permissionSetGroupDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
+        profileDependenciesCollector.persistRelativeGraphEdges(requestDto, session);
     }
 }

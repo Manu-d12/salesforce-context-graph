@@ -11,8 +11,8 @@ public class ThreadConfig {
     @Bean("loadDependenciesExecutor")
     public ThreadPoolTaskExecutor loadDependenciesExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(10);
-        executor.setMaxPoolSize(10);
+        executor.setCorePoolSize(100);
+        executor.setMaxPoolSize(100);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("loadDependenciesExecutor-");
         executor.initialize();

@@ -9,6 +9,7 @@ public enum NodeType {
     PROFILE("Profile"),
     ROLE("UserRole"),
     APEX_CLASS("ApexClass"),
+    APEX_PAGE("ApexPage"),
     APEX_TRIGGER("ApexTrigger"),
     LWC("LightningComponentBundle"),
     AURA_COMPONENT("AuraDefinitionBundle"),
@@ -29,6 +30,7 @@ public enum NodeType {
     FLEXI_PAGE("FlexiPage"),
     WEB_LINK("WebLink"),
     CUSTOM_LABEL("CustomLabel"),
+    CUSTOM_PERMISSION("CustomPermission"),
     CUSTOM_APPLICATION("CustomApplication");
 
     private final String metadatatype;

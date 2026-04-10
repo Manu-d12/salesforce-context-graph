@@ -236,10 +236,12 @@ public final class EdgeResolverService {
     private static boolean isAccessTarget(NodeType nodeType) {
         return isObjectOrField(nodeType)
                 || nodeType == NodeType.APEX_CLASS
+                || nodeType == NodeType.APEX_PAGE
                 || nodeType == NodeType.LWC
                 || nodeType == NodeType.AURA_COMPONENT
                 || nodeType == NodeType.FLEXI_PAGE
                 || nodeType == NodeType.CUSTOM_TAB
+                || nodeType == NodeType.CUSTOM_PERMISSION
                 || nodeType == NodeType.CUSTOM_APPLICATION;
     }
 }

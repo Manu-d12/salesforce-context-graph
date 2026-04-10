@@ -5,6 +5,7 @@ import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardO
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataComponentDependencyCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.ProfileDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
 import org.autorabit.salesforcecontextgraph.api.request.SfOrgSyncRequestDto;
@@ -23,6 +24,7 @@ public class AnalysisOrchestratorAgent {
     private final CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector;
     private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private final PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
+    private final ProfileDependenciesCollector profileDependenciesCollector;
     private final TargetDependencyGraphBuilder targetDependencyGraphBuilder;
     private final SalesforceOAuthService salesforceOAuthService;
 
@@ -32,6 +34,7 @@ public class AnalysisOrchestratorAgent {
             CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector,
             PermissionSetDependenciesCollector permissionSetDependenciesCollector,
             PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector,
+            ProfileDependenciesCollector profileDependenciesCollector,
             TargetDependencyGraphBuilder targetDependencyGraphBuilder,
             SalesforceOAuthService salesforceOAuthService
     ) {
@@ -40,6 +43,7 @@ public class AnalysisOrchestratorAgent {
         this.customStandardObjectDependencyCollector = customStandardObjectDependencyCollector;
         this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
         this.permissionSetGroupDependenciesCollector = permissionSetGroupDependenciesCollector;
+        this.profileDependenciesCollector = profileDependenciesCollector;
         this.targetDependencyGraphBuilder = targetDependencyGraphBuilder;
         this.salesforceOAuthService = salesforceOAuthService;
     }
@@ -50,12 +54,14 @@ public class AnalysisOrchestratorAgent {
         List<GraphEdge> objectRelations = customStandardObjectDependencyCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> metadataEdges = metadataComponentDependencyCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> permissionSetGroupRelations = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> profileRelations = profileDependenciesCollector.buildRelativeGraphEdges(session);
 
         List<GraphEdge> organizationGraphEdges = new ArrayList<>();
         organizationGraphEdges.addAll(permissionSetDependencies);
         organizationGraphEdges.addAll(objectRelations);
         organizationGraphEdges.addAll(metadataEdges);
         organizationGraphEdges.addAll(permissionSetGroupRelations);
+        organizationGraphEdges.addAll(profileRelations);
 
         return graphBuilderAgent.build(
                 organizationGraphEdges
