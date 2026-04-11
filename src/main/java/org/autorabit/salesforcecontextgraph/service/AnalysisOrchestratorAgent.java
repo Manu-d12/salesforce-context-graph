@@ -1,7 +1,9 @@
 package org.autorabit.salesforcecontextgraph.service;
 
 import org.autorabit.salesforcecontextgraph.api.request.AnalysisRequestDto;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomApplicationDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomStandardObjectDependencyCollector;
+import org.autorabit.salesforcecontextgraph.collectorserviceimpl.CustomTabDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.MetadataComponentDependencyCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetDependenciesCollector;
 import org.autorabit.salesforcecontextgraph.collectorserviceimpl.PermissionSetGroupDependenciesCollector;
@@ -21,7 +23,9 @@ public class AnalysisOrchestratorAgent {
 
     private final MetadataComponentDependencyCollector metadataComponentDependencyCollector;
     private final GraphBuilderAgent graphBuilderAgent;
+    private final CustomApplicationDependenciesCollector customApplicationDependenciesCollector;
     private final CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector;
+    private final CustomTabDependenciesCollector customTabDependenciesCollector;
     private final PermissionSetDependenciesCollector permissionSetDependenciesCollector;
     private final PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector;
     private final ProfileDependenciesCollector profileDependenciesCollector;
@@ -31,7 +35,9 @@ public class AnalysisOrchestratorAgent {
     public AnalysisOrchestratorAgent(
             MetadataComponentDependencyCollector metadataComponentDependencyCollector,
             GraphBuilderAgent graphBuilderAgent,
+            CustomApplicationDependenciesCollector customApplicationDependenciesCollector,
             CustomStandardObjectDependencyCollector customStandardObjectDependencyCollector,
+            CustomTabDependenciesCollector customTabDependenciesCollector,
             PermissionSetDependenciesCollector permissionSetDependenciesCollector,
             PermissionSetGroupDependenciesCollector permissionSetGroupDependenciesCollector,
             ProfileDependenciesCollector profileDependenciesCollector,
@@ -40,7 +46,9 @@ public class AnalysisOrchestratorAgent {
     ) {
         this.metadataComponentDependencyCollector = metadataComponentDependencyCollector;
         this.graphBuilderAgent = graphBuilderAgent;
+        this.customApplicationDependenciesCollector = customApplicationDependenciesCollector;
         this.customStandardObjectDependencyCollector = customStandardObjectDependencyCollector;
+        this.customTabDependenciesCollector = customTabDependenciesCollector;
         this.permissionSetDependenciesCollector = permissionSetDependenciesCollector;
         this.permissionSetGroupDependenciesCollector = permissionSetGroupDependenciesCollector;
         this.profileDependenciesCollector = profileDependenciesCollector;
@@ -52,6 +60,8 @@ public class AnalysisOrchestratorAgent {
         SalesforceSession session = resolveSession(requestDto);
         List<GraphEdge> permissionSetDependencies = permissionSetDependenciesCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> objectRelations = customStandardObjectDependencyCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> customApplicationRelations = customApplicationDependenciesCollector.buildRelativeGraphEdges(session);
+        List<GraphEdge> customTabRelations = customTabDependenciesCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> metadataEdges = metadataComponentDependencyCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> permissionSetGroupRelations = permissionSetGroupDependenciesCollector.buildRelativeGraphEdges(session);
         List<GraphEdge> profileRelations = profileDependenciesCollector.buildRelativeGraphEdges(session);
@@ -59,6 +69,8 @@ public class AnalysisOrchestratorAgent {
         List<GraphEdge> organizationGraphEdges = new ArrayList<>();
         organizationGraphEdges.addAll(permissionSetDependencies);
         organizationGraphEdges.addAll(objectRelations);
+        organizationGraphEdges.addAll(customApplicationRelations);
+        organizationGraphEdges.addAll(customTabRelations);
         organizationGraphEdges.addAll(metadataEdges);
         organizationGraphEdges.addAll(permissionSetGroupRelations);
         organizationGraphEdges.addAll(profileRelations);

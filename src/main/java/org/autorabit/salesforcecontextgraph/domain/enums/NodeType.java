@@ -25,6 +25,7 @@ public enum NodeType {
     SHARING_RULE("SharingRule"),
     QUEUE("Queue"),
     STATIC_RESOURCE("StaticResource"),
+    CONTENT_ASSET("ContentAsset"),
     EMAIL_TEMPLATE("EmailTemplate"),
     CUSTOM_TAB("CustomTab"),
     FLEXI_PAGE("FlexiPage"),

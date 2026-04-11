@@ -146,11 +146,23 @@ public final class EdgeResolverService {
         if (from == NodeType.FLEXI_PAGE && isObjectNode(to)) {
             return new EdgeResolution(EdgeType.ASSOCIATED_WITH, DependencyStrength.SOFT_DEPENDENCY);
         }
-        if (from == NodeType.CUSTOM_TAB && (to == NodeType.LWC || to == NodeType.AURA_COMPONENT || to == NodeType.FLEXI_PAGE)) {
-            return new EdgeResolution(EdgeType.HOSTS, DependencyStrength.SOFT_DEPENDENCY);
+        if (from == NodeType.CUSTOM_TAB
+                && (to == NodeType.LWC
+                || to == NodeType.AURA_COMPONENT
+                || to == NodeType.FLEXI_PAGE
+                || to == NodeType.APEX_PAGE)) {
+            return new EdgeResolution(EdgeType.HOSTS, DependencyStrength.HARD_DEPENDENCY);
         }
-        if (from == NodeType.CUSTOM_APPLICATION && (to == NodeType.CUSTOM_TAB || to == NodeType.FLEXI_PAGE || to == NodeType.WEB_LINK)) {
-            return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.SOFT_DEPENDENCY);
+        if (from == NodeType.CUSTOM_TAB && to == NodeType.CUSTOM_OBJECT) {
+            return new EdgeResolution(EdgeType.BELONGS_TO, DependencyStrength.HARD_DEPENDENCY);
+        }
+        if (from == NodeType.CUSTOM_APPLICATION
+                && (to == NodeType.CUSTOM_TAB
+                || to == NodeType.FLEXI_PAGE
+                || to == NodeType.WEB_LINK
+                || to == NodeType.APEX_PAGE
+                || to == NodeType.CONTENT_ASSET)) {
+            return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.HARD_DEPENDENCY);
         }
         if (from == NodeType.WEB_LINK && isObjectNode(to)) {
             return new EdgeResolution(EdgeType.ASSOCIATED_WITH, DependencyStrength.SOFT_DEPENDENCY);
