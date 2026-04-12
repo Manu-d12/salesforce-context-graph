@@ -51,29 +51,27 @@ public class CustomApplicationDependenciesCollector implements CollectorService 
         List<GraphEdge> edges = new ArrayList<>();
         Set<String> edgeKeys = new LinkedHashSet<>();
         for (Metadata metadataRecord : applicationMetadata) {
-            if (!(metadataRecord instanceof CustomApplication customApplication)) {
-                continue;
-            }
+            try {
+                if (!(metadataRecord instanceof CustomApplication customApplication)) {
+                    continue;
+                }
 
-            GraphNode applicationNode = GraphNode.buildGraphNode(
-                    customApplication.getFullName(),
-                    NodeType.CUSTOM_APPLICATION.toString()
-            );
+                GraphNode applicationNode = GraphNode.buildGraphNode(
+                        customApplication.getFullName(),
+                        NodeType.CUSTOM_APPLICATION.toString()
+                );
 
-            processTabReferences(applicationNode, customApplication.getTabs(), metadataLookups, edges, edgeKeys);
-            processTabReference(applicationNode, customApplication.getDefaultLandingTab(), metadataLookups, edges, edgeKeys);
-            processUtilityBar(applicationNode, customApplication.getUtilityBar(), metadataLookups, edges, edgeKeys);
-            processLogo(applicationNode, customApplication.getLogo(), edges, edgeKeys);
+                processTabReferences(applicationNode, customApplication.getTabs(), metadataLookups, edges, edgeKeys);
+                processTabReference(applicationNode, customApplication.getDefaultLandingTab(), metadataLookups, edges, edgeKeys);
+                processUtilityBar(applicationNode, customApplication.getUtilityBar(), metadataLookups, edges, edgeKeys);
+                processLogo(applicationNode, customApplication.getLogo(), edges, edgeKeys);
+            } catch (Exception ignored) {}
         }
         return edges;
     }
 
     @Async("loadDependenciesExecutor")
     @Override
-    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        persistRelativeGraphEdges(requestDto, null);
-    }
-
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
         List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {

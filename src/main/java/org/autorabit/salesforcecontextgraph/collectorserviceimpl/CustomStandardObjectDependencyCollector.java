@@ -48,40 +48,39 @@ public class CustomStandardObjectDependencyCollector implements CollectorService
 
         List<GraphEdge> edges = new ArrayList<>();
         for (Map<String, Object> fieldDefinition : fieldDefinitions) {
-            String fieldName = stringValue(fieldDefinition.get("QualifiedApiName"));
-            String objectApiName = extractEntityApiName(fieldDefinition.get("EntityDefinition"));
-            if (objectApiName == null) {
-                continue;
-            }
+            try {
+                String fieldName = stringValue(fieldDefinition.get("QualifiedApiName"));
+                String objectApiName = extractEntityApiName(fieldDefinition.get("EntityDefinition"));
+                if (objectApiName == null) {
+                    continue;
+                }
 
-            String fieldType = stringValue(fieldDefinition.get("DataType"));
-            boolean isMasterDetail = fieldType != null && fieldType.startsWith("Master-Detail");
+                String fieldType = stringValue(fieldDefinition.get("DataType"));
+                boolean isMasterDetail = fieldType != null && fieldType.startsWith("Master-Detail");
 
-            String fullFieldName = objectApiName + "." + fieldName;
+                String fullFieldName = objectApiName + "." + fieldName;
 
-            GraphNode fromNode = GraphNode.buildGraphNode(fullFieldName, NodeType.CUSTOM_FIELD.toString());
+                GraphNode fromNode = GraphNode.buildGraphNode(fullFieldName, NodeType.CUSTOM_FIELD.toString());
 
-            GraphNode toParentNode = GraphNode.buildGraphNode(objectApiName, resolveObjectType(objectApiName).toString());
+                GraphNode toParentNode = GraphNode.buildGraphNode(objectApiName, resolveObjectType(objectApiName).toString());
 
-            edges.add(new GraphEdge(fromNode, toParentNode, EdgeType.PARENT.toString()));
+                edges.add(new GraphEdge(fromNode, toParentNode, EdgeType.PARENT.toString()));
 
-            String referencedObject = extractFirstReferenceTarget(fieldDefinition);
-            if (referencedObject == null) {
-                continue;
-            }
+                String referencedObject = extractFirstReferenceTarget(fieldDefinition);
+                if (referencedObject == null) {
+                    continue;
+                }
 
-            GraphNode toReferencedNode = GraphNode.buildGraphNode(referencedObject, resolveObjectType(referencedObject).toString());
-            edges.add(new GraphEdge(fromNode, toReferencedNode, isMasterDetail ? EdgeType.MASTER_DETAIL.toString() : EdgeType.LOOK_UP.toString()));
+                GraphNode toReferencedNode = GraphNode.buildGraphNode(referencedObject, resolveObjectType(referencedObject).toString());
+                edges.add(new GraphEdge(fromNode, toReferencedNode, isMasterDetail ? EdgeType.MASTER_DETAIL.toString() : EdgeType.LOOK_UP.toString()));
+            } catch (Exception ignored) {}
         }
         return edges;
     }
 
+
     @Override
     @Async("loadDependenciesExecutor")
-    public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
-        persistRelativeGraphEdges(requestDto, null);
-    }
-
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
         List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {

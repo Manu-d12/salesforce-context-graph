@@ -54,19 +54,21 @@ public class PermissionSetDependenciesCollector implements CollectorService {
         List<GraphEdge> edges = new ArrayList<>();
         Set<String> edgeKeys = new LinkedHashSet<>();
         for (Metadata metadataRecord : permissionSetMetadata) {
-            if (!(metadataRecord instanceof PermissionSet permissionSet)) {
-                continue;
-            }
+           try {
+               if (!(metadataRecord instanceof PermissionSet permissionSet)) {
+                   continue;
+               }
 
-            GraphNode permissionSetNode = GraphNode.buildGraphNode(permissionSet.getFullName(), NodeType.PERMISSION_SET.toString());
-            processApplicationVisibilities(permissionSetNode, permissionSet.getApplicationVisibilities(), edges, edgeKeys);
-            processClassAccesses(permissionSetNode, permissionSet.getClassAccesses(), edges, edgeKeys);
-            processCustomMetadataTypeAccesses(permissionSetNode, permissionSet.getCustomMetadataTypeAccesses(), edges, edgeKeys);
-            processCustomSettingAccesses(permissionSetNode, permissionSet.getCustomSettingAccesses(), edges, edgeKeys);
-            processFieldPermissions(permissionSetNode, permissionSet.getFieldPermissions(), edges, edgeKeys);
-            processObjectPermissions(permissionSetNode, permissionSet.getObjectPermissions(), edges, edgeKeys);
-            processFlowAccesses(permissionSetNode, permissionSet.getFlowAccesses(), edges, edgeKeys);
-            processTabSettings(permissionSetNode, permissionSet.getTabSettings(), edges, edgeKeys);
+               GraphNode permissionSetNode = GraphNode.buildGraphNode(permissionSet.getFullName(), NodeType.PERMISSION_SET.toString());
+               processApplicationVisibilities(permissionSetNode, permissionSet.getApplicationVisibilities(), edges, edgeKeys);
+               processClassAccesses(permissionSetNode, permissionSet.getClassAccesses(), edges, edgeKeys);
+               processCustomMetadataTypeAccesses(permissionSetNode, permissionSet.getCustomMetadataTypeAccesses(), edges, edgeKeys);
+               processCustomSettingAccesses(permissionSetNode, permissionSet.getCustomSettingAccesses(), edges, edgeKeys);
+               processFieldPermissions(permissionSetNode, permissionSet.getFieldPermissions(), edges, edgeKeys);
+               processObjectPermissions(permissionSetNode, permissionSet.getObjectPermissions(), edges, edgeKeys);
+               processFlowAccesses(permissionSetNode, permissionSet.getFlowAccesses(), edges, edgeKeys);
+               processTabSettings(permissionSetNode, permissionSet.getTabSettings(), edges, edgeKeys);
+           } catch (Exception ignored) {}
         }
         return edges;
     }

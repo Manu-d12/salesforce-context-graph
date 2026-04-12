@@ -44,26 +44,27 @@ public class PermissionSetGroupDependenciesCollector implements CollectorService
                 session
         );
         for (Metadata metadataRecord : permissionSetGroupMetadata) {
-            if (!(metadataRecord instanceof PermissionSetGroup permissionSetGroup)) {
-                continue;
-            }
-            String[] permissionSets = permissionSetGroup.getPermissionSets();
-            if (permissionSets == null) {
-                continue;
-            }
+            try {
+                if (!(metadataRecord instanceof PermissionSetGroup permissionSetGroup)) {
+                    continue;
+                }
+                String[] permissionSets = permissionSetGroup.getPermissionSets();
+                if (permissionSets == null) {
+                    continue;
+                }
 
-            GraphNode fromNode = GraphNode.buildGraphNode(permissionSetGroup.getFullName(), NodeType.PERMISSION_SET_GROUP.toString());
-            for(String permissionSet : permissionSets) {
-                GraphNode toNode = GraphNode.buildGraphNode(permissionSet, NodeType.PERMISSION_SET.toString());
-                edges.add (
-                        new GraphEdge (
-                                fromNode,
-                                toNode,
-                                EdgeResolverService.resolve(NodeType.PERMISSION_SET_GROUP.getMetadatatype(), NodeType.PERMISSION_SET.getMetadatatype()).toString()
-                        )
-                );
-            }
-
+                GraphNode fromNode = GraphNode.buildGraphNode(permissionSetGroup.getFullName(), NodeType.PERMISSION_SET_GROUP.toString());
+                for(String permissionSet : permissionSets) {
+                    GraphNode toNode = GraphNode.buildGraphNode(permissionSet, NodeType.PERMISSION_SET.toString());
+                    edges.add (
+                            new GraphEdge (
+                                    fromNode,
+                                    toNode,
+                                    EdgeResolverService.resolve(NodeType.PERMISSION_SET_GROUP.getMetadatatype(), NodeType.PERMISSION_SET.getMetadatatype()).toString()
+                            )
+                    );
+                }
+            } catch (Exception ignored) {}
         }
         return edges;
     }

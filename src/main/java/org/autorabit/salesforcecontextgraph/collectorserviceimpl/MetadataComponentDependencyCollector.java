@@ -57,12 +57,13 @@ public class MetadataComponentDependencyCollector implements CollectorService {
         return fetchDependencyMetadata(session);
     }
 
-    @Async("loadDependenciesExecutor")
-    @Override
+
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto) {
         persistRelativeGraphEdges(requestDto, null);
     }
 
+    @Async("loadDependenciesExecutor")
+    @Override
     public void persistRelativeGraphEdges(SfOrgSyncRequestDto requestDto, SalesforceSession session) {
         List<GraphEdge> edges = buildRelativeGraphEdges(session);
         if (edges.isEmpty()) {

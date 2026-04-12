@@ -55,10 +55,12 @@ public class RoleDependenciesCollector implements CollectorService {
         List<GraphEdge> edges = new ArrayList<>();
         Set<String> edgeKeys = new LinkedHashSet<>();
         for (Metadata metadataRecord : roleMetadata) {
-            if (!(metadataRecord instanceof Role role)) {
-                continue;
-            }
-            addParentRoleEdge(role, edges, edgeKeys);
+            try {
+                if (!(metadataRecord instanceof Role role)) {
+                    continue;
+                }
+                addParentRoleEdge(role, edges, edgeKeys);
+            } catch (Exception ignored) {}
         }
         return edges;
     }
@@ -97,11 +99,6 @@ public class RoleDependenciesCollector implements CollectorService {
         if (edgeKeys.add(edgeKey)) {
             edges.add(new GraphEdge(childRoleNode, parentRoleNode, edgeType));
         }
-    }
-
-    @PostConstruct
-    public void init() {
-        this.persistRelativeGraphEdges(null);
     }
 
     private boolean hasText(String value) {

@@ -197,6 +197,9 @@ public final class EdgeResolverService {
         if (from == NodeType.PERMISSION_SET_GROUP && to == NodeType.PERMISSION_SET) {
             return new EdgeResolution(EdgeType.CONTAINS, DependencyStrength.SOFT_DEPENDENCY);
         }
+        if (from == NodeType.CUSTOM_PERMISSION && to == NodeType.CUSTOM_PERMISSION) {
+            return new EdgeResolution(EdgeType.PARENT, DependencyStrength.HARD_DEPENDENCY);
+        }
         if (from == NodeType.SHARING_RULE && isObjectNode(to)) {
             return new EdgeResolution(EdgeType.EXPOSES, DependencyStrength.SOFT_DEPENDENCY);
         }
