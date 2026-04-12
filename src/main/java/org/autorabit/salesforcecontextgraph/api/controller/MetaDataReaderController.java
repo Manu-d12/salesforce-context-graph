@@ -1,6 +1,7 @@
 package org.autorabit.salesforcecontextgraph.api.controller;
 
 import com.sforce.soap.metadata.DescribeMetadataResult;
+import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.Metadata;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,13 @@ public class MetaDataReaderController {
             throw new IllegalArgumentException("fieldApiNames is required");
         }
         return metadataReaderService.getFieldDefinitions(requestDto.fieldApiNames());
+    }
+
+    @GetMapping("/getFileProperties")
+    public List<FileProperties> listMetadataIdentifiersFileProperties(
+            @RequestBody  Map<String, String> params
+    ) {
+        return this.metadataReaderService.listMetadataIdentifiersFileProperties(params.get("metadataType"), null);
     }
 
     @PostMapping("/meta-data/describe")

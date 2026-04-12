@@ -1,7 +1,7 @@
 package org.autorabit.salesforcecontextgraph.collectorserviceimpl;
 
-import com.sforce.soap.metadata.CustomTab;
 import com.sforce.soap.metadata.Metadata;
+import com.sforce.soap.metadata.Role;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +27,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
-public class CustomTabDependenciesCollector implements CollectorService {
+public class RoleDependenciesCollector implements CollectorService {
+
+    private static final String METADATA_TYPE = "Role";
+    private static final String EDGE_SOURCE = "ROLE_DEPENDENCIES_COLLECTOR";
 
     private final MetadataReaderService metadataReaderService;
     private final MetadataDependencyRepository metadataDependencyRepository;
@@ -39,32 +42,23 @@ public class CustomTabDependenciesCollector implements CollectorService {
     }
 
     public List<GraphEdge> buildRelativeGraphEdges(SalesforceSession session) {
-        List<String> tabApiNames = metadataReaderService.listMetadataObjects("CustomTab", session);
-        if (tabApiNames.isEmpty()) {
+        List<String> roleApiNames = metadataReaderService.listMetadataObjects(METADATA_TYPE, session);
+        if (roleApiNames.isEmpty()) {
             return List.of();
         }
 
-        List<Metadata> tabMetadata = metadataReaderService.getMetaDataDescribe(
-                new MetadataDescribeRequestDto("CustomTab", tabApiNames),
+        List<Metadata> roleMetadata = metadataReaderService.getMetaDataDescribe(
+                new MetadataDescribeRequestDto(METADATA_TYPE, roleApiNames),
                 session
         );
 
         List<GraphEdge> edges = new ArrayList<>();
         Set<String> edgeKeys = new LinkedHashSet<>();
-        for (Metadata metadataRecord : tabMetadata) {
-            if (!(metadataRecord instanceof CustomTab customTab)) {
+        for (Metadata metadataRecord : roleMetadata) {
+            if (!(metadataRecord instanceof Role role)) {
                 continue;
             }
-
-            GraphNode tabNode = GraphNode.buildGraphNode(customTab.getFullName(), NodeType.CUSTOM_TAB.toString());
-            addEdge(tabNode, customTab.getAuraComponent(), NodeType.AURA_COMPONENT, edges, edgeKeys);
-            addEdge(tabNode, customTab.getLwcComponent(), NodeType.LWC, edges, edgeKeys);
-            addEdge(tabNode, customTab.getFlexiPage(), NodeType.FLEXI_PAGE, edges, edgeKeys);
-            addEdge(tabNode, customTab.getPage(), NodeType.APEX_PAGE, edges, edgeKeys);
-
-            if (customTab.isCustomObject() && hasText(customTab.getFullName()) && customTab.getFullName().endsWith("__c")) {
-                addEdge(tabNode, customTab.getFullName(), NodeType.CUSTOM_OBJECT, edges, edgeKeys);
-            }
+            addParentRoleEdge(role, edges, edgeKeys);
         }
         return edges;
     }
@@ -83,35 +77,34 @@ public class CustomTabDependenciesCollector implements CollectorService {
 
         String orgId = Helper.resolveOrgId(metadataApiClient, session);
         List<MetadataDependency> metadataDependencies = edges.stream()
-                .map(edge -> Helper.buildMetadataDependency(edge, orgId, "CUSTOM_TAB_DEPENDENCIES_COLLECTOR"))
+                .map(edge -> Helper.buildMetadataDependency(edge, orgId, EDGE_SOURCE))
                 .toList();
         metadataDependencyRepository.saveAll(metadataDependencies);
     }
 
-    private void addEdge(
-            GraphNode tabNode,
-            String targetName,
-            NodeType targetType,
-            List<GraphEdge> edges,
-            Set<String> edgeKeys
-    ) {
-        if (!hasText(targetName)) {
+    private void addParentRoleEdge(Role role, List<GraphEdge> edges, Set<String> edgeKeys) {
+        if (!hasText(role.getFullName()) || !hasText(role.getParentRole())) {
             return;
         }
 
-        GraphNode targetNode = GraphNode.buildGraphNode(targetName, targetType.toString());
+        GraphNode childRoleNode = GraphNode.buildGraphNode(role.getFullName(), NodeType.ROLE.toString());
+        GraphNode parentRoleNode = GraphNode.buildGraphNode(role.getParentRole(), NodeType.ROLE.toString());
         String edgeType = EdgeResolverService.resolve(
-                NodeType.CUSTOM_TAB.getMetadatatype(),
-                targetType.getMetadatatype()
+                NodeType.ROLE.getMetadatatype(),
+                NodeType.ROLE.getMetadatatype()
         ).toString();
-        String edgeKey = tabNode.id() + "|" + targetNode.id() + "|" + edgeType;
+        String edgeKey = childRoleNode.id() + "|" + parentRoleNode.id() + "|" + edgeType;
         if (edgeKeys.add(edgeKey)) {
-            edges.add(new GraphEdge(tabNode, targetNode, edgeType));
+            edges.add(new GraphEdge(childRoleNode, parentRoleNode, edgeType));
         }
+    }
+
+    @PostConstruct
+    public void init() {
+        this.persistRelativeGraphEdges(null);
     }
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
-
 }

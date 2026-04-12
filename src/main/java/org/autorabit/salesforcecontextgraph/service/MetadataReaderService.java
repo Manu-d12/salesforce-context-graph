@@ -1,6 +1,7 @@
 package org.autorabit.salesforcecontextgraph.service;
 
 import com.sforce.soap.metadata.DescribeMetadataResult;
+import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.Metadata;
 import java.util.List;
 import java.util.Map;
@@ -75,5 +76,9 @@ public class MetadataReaderService {
             throw new IllegalArgumentException("metadataAPINames is required");
         }
         return metadataApiClient.getPermissionSetDescribe(normalizedNames, requestDto.metadataType(), session);
+    }
+
+    public List<FileProperties> listMetadataIdentifiersFileProperties(String metadataType, SalesforceSession session) {
+        return metadataApiClient.listMetadataIdentifiersFileProperties(metadataType, session);
     }
 }

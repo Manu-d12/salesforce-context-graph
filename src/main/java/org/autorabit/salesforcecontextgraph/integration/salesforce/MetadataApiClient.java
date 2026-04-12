@@ -67,6 +67,10 @@ public class MetadataApiClient {
         return listMetadataIdentifiers(metadataType, null);
     }
 
+    public List<FileProperties> listMetadataIdentifiersFileProperties(String metadataType, SalesforceSession session) {
+        return listMetadataFileProperties(metadataType, session);
+    }
+
     public List<MetadataIdentifier> listMetadataIdentifiers(String metadataType, SalesforceSession session) {
         return listMetadataFileProperties(metadataType, session).stream()
                 .map(fileProperties -> new MetadataIdentifier(

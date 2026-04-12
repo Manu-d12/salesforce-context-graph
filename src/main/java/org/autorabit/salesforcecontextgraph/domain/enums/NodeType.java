@@ -7,7 +7,7 @@ public enum NodeType {
     PERMISSION_SET("PermissionSet"),
     PERMISSION_SET_GROUP("PermissionSetGroup"),
     PROFILE("Profile"),
-    ROLE("UserRole"),
+    ROLE("Role"),
     APEX_CLASS("ApexClass"),
     APEX_PAGE("ApexPage"),
     APEX_TRIGGER("ApexTrigger"),
