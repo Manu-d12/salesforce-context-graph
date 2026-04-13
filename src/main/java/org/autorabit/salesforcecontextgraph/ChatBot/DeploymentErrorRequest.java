@@ -11,6 +11,6 @@ import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
  */
 
 @Builder
-public record DeploymentErrorRequest(String errorMessage, String componentName, String deploymentStatus, AnalysisGraphResponse graphResponse) {
+public record DeploymentErrorRequest(String errorMessage, String componentName, String deploymentStatus) {
 }
 

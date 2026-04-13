@@ -13,6 +13,7 @@ import org.autorabit.salesforcecontextgraph.domain.model.GraphEdge;
 import org.autorabit.salesforcecontextgraph.domain.model.GraphNode;
 import org.autorabit.salesforcecontextgraph.domain.model.RuntimeGraph;
 import org.autorabit.salesforcecontextgraph.service.AnalysisOrchestratorAgent;
+import org.autorabit.salesforcecontextgraph.service.OrgGraphContextStore;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,11 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class AnalysisController {
 
     private final AnalysisOrchestratorAgent orchestratorAgent;
+    private final OrgGraphContextStore orgGraphContextStore;
 
     public AnalysisController(
-            AnalysisOrchestratorAgent orchestratorAgent
+            AnalysisOrchestratorAgent orchestratorAgent,
+            OrgGraphContextStore orgGraphContextStore
     ) {
         this.orchestratorAgent = orchestratorAgent;
+        this.orgGraphContextStore = orgGraphContextStore;
     }
 
     @PostMapping
@@ -67,7 +71,9 @@ public class AnalysisController {
         }
         RuntimeGraph graph = orchestratorAgent.runTargetMetadataAnalysis(requestDto.analysis());
         List<GraphEdgeResponse> edges = flattenEdges(graph.edges());
-        return new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
+        AnalysisGraphResponse response = new AnalysisGraphResponse(toNodeResponses(graph.nodes()), edges);
+        orgGraphContextStore.upsert(requestDto.analysis().sfOrgId(), response);
+        return response;
     }
 
     @GetMapping("/message")

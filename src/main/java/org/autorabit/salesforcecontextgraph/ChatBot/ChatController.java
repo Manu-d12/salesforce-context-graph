@@ -1,24 +1,32 @@
 package org.autorabit.salesforcecontextgraph.ChatBot;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.autorabit.salesforcecontextgraph.api.response.AnalysisGraphResponse;
+import org.autorabit.salesforcecontextgraph.service.OrgGraphContextStore;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
 
     private final ChatClient client;
-
-    private AnalysisGraphResponse analysisGraphResponse;
+    private OrgGraphContextStore orgGraphContextStore;
+    private final ConcurrentMap<String, Long> injectedGraphVersionByConversation = new ConcurrentHashMap<>();
+    private static final Set<String> GRAPH_QUERY_KEYWORDS = Set.of(
+            "graph", "node", "edge", "dependency", "dependencies", "path", "impact", "related",
+            "connected", "connection", "upstream", "downstream", "metadata", "component", "why failed"
+    );
 
     private static final String SYSTEM_PROMPT = """
             You are a Salesforce expert AI assistant.
@@ -78,20 +86,63 @@ public class ChatController {
             "Sorry i can only answer questions related to salesforce."
             """;
 
-    public ChatController(ChatClient.Builder client) {
+    public ChatController(ChatClient.Builder client, OrgGraphContextStore orgGraphContextStore) {
+
+        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(50).build();
+        this.orgGraphContextStore = orgGraphContextStore;
+
         this.client = client
                 .defaultSystem(SYSTEM_PROMPT)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
     }
 
-    @GetMapping
-    public String chat(@RequestParam("q") String message) {
-        // Handle a general chat message
+    @GetMapping("/query")
+    public String chat(@RequestParam("q") String message,
+                       @RequestParam(value = "sfOrgId", required = false) String sfOrgId,
+                       @RequestParam(value = "sessionId", required = false) String sessionId) {
         try {
-            System.out.println(message);
+            String conversationId = buildConversationId(sfOrgId, sessionId);
+            boolean graphQuestion = isGraphQuestion(message);
+
+            String promptToSend = message;
+            if (graphQuestion) {
+                var contextPayload = orgGraphContextStore.findGraphContext(sfOrgId);
+                if (contextPayload.isPresent()) {
+                    long currentVersion = contextPayload.get().version();
+                    long injectedVersion = injectedGraphVersionByConversation.getOrDefault(conversationId, -1L);
+                    if (currentVersion != injectedVersion) {
+                        promptToSend = String.format("""
+                                        User question:
+                                        %s
+
+                                        Graph context JSON for this org:
+                                        %s
+
+                                        Use this graph context for graph-specific reasoning.
+                                        """,
+                                message,
+                                contextPayload.get().contextJson()
+                        );
+                        injectedGraphVersionByConversation.put(conversationId, currentVersion);
+                    }
+                } else {
+                    promptToSend = String.format("""
+                                    User question:
+                                    %s
+
+                                    No graph context exists yet for this orgId.
+                                    If the user asks graph-specific questions, ask them to run /api/analysis/target first.
+                                    """,
+                            message
+                    );
+                }
+            }
+
             return client
                     .prompt()
-                    .user(message)
+                    .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, conversationId))
+                    .user(promptToSend)
                     .call()
                     .content();
         } catch (Exception e) {
@@ -99,10 +150,9 @@ public class ChatController {
         }
     }
 
-    @PostMapping("/deployment-error")
+    @GetMapping("/deployment-error")
     public String analyzeDeploymentError(@RequestBody DeploymentErrorRequest request) {
         try {
-            String graphContext = buildGraphContext(request.graphResponse());
 
             String contextualPrompt = String.format("""
                             A Salesforce deployment has failed with the following error message:
@@ -116,7 +166,6 @@ public class ChatController {
                             associated with this deployment. Each node represents a Salesforce metadata
                             component, and each edge represents a dependency between components.
                             
-                            %s
                             
                             Based on the error above AND the dependency graph:
                             1. Issue Summary
@@ -128,8 +177,7 @@ public class ChatController {
                             """,
                     request.errorMessage(),
                     request.componentName(),
-                    request.deploymentStatus(),
-                    graphContext
+                    request.deploymentStatus()
             );
 
             return client.prompt().user(contextualPrompt).call().content();
@@ -139,18 +187,23 @@ public class ChatController {
         }
     }
 
-    //serializing the graph
-    private String buildGraphContext(AnalysisGraphResponse graph) {
-        if (graph == null) {
-            return "No dependency graph available.";
-        }
+    private String buildConversationId(String sfOrgId, String sessionId) {
+        String orgPart = (sfOrgId == null || sfOrgId.isBlank()) ? "no-org" : sfOrgId.trim();
+        String sessionPart = (sessionId == null || sessionId.isBlank()) ? "default-session" : sessionId.trim();
+        return orgPart + "::" + sessionPart;
+    }
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(graph);
-        } catch (JsonProcessingException e) {
-            return "Graph context could not be serialized: " + e.getMessage();
+    private boolean isGraphQuestion(String message) {
+        if (message == null || message.isBlank()) {
+            return false;
         }
+        String normalized = message.toLowerCase();
+        for (String keyword : GRAPH_QUERY_KEYWORDS) {
+            if (normalized.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
