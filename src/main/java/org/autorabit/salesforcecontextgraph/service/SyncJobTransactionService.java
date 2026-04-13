@@ -67,4 +67,12 @@ public class SyncJobTransactionService {
             syncJobRepository.save(syncJob);
         }
     }
+
+    @Transactional
+    public boolean isSyncInProgress(String orgId) {
+        SyncJob syncJob = syncJobRepository
+                .findTopByOrgIdAndStatusOrderByCreatedDateDesc(orgId, JobStatus.IN_PROGRESS)
+                .orElse(null);
+        return syncJob != null;
+    }
 }

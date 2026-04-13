@@ -50,14 +50,13 @@ public class SyncOrgMetadataService {
     private final ThreadPoolTaskExecutor loadDependenciesExecutor;
 
     @Async("loadDependenciesExecutor")
-    public void sync(SfOrgSyncRequestDto requestDto) {
-        String orgId = null;
+    public void sync(SfOrgSyncRequestDto requestDto, SalesforceSession session, String orgId) {
 
         try {
-            SalesforceSession session = salesforceOAuthService.authenticate(requestDto);
             orgId = Helper.resolveOrgId(apiClient, session);
 
             log.info("Starting metadata sync for orgId={}", orgId);
+
 
             syncJobTransactionService.initializeSync(orgId);
 
