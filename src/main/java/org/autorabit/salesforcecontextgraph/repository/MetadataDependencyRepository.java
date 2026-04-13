@@ -16,4 +16,7 @@ public interface MetadataDependencyRepository extends JpaRepository<MetadataDepe
             String metadataType,
             Collection<String> metadataNames
     );
+
+    List<MetadataDependency> findByOrgId(String orgId);
+
 }

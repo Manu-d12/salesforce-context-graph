@@ -21,4 +21,11 @@ public class SyncOrgMetadataController {
         return "Synchronization started!!";
     }
 
+    @GetMapping("/jobStatus/{orgId}")
+    public String getLastSyncInJobStatus(
+            @PathVariable String orgId
+    ) {
+        return syncOrgMetadataService.getLastSyncInJobStatus(orgId);
+    }
+
 }
