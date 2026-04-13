@@ -17,7 +17,6 @@ import org.autorabit.salesforcecontextgraph.integration.salesforce.MetadataApiCl
 import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceOAuthService;
 import org.autorabit.salesforcecontextgraph.integration.salesforce.SalesforceSession;
 import org.autorabit.salesforcecontextgraph.repository.SyncJobRepository;
-import org.autorabit.salesforcecontextgraph.utils.Helper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -53,8 +52,6 @@ public class SyncOrgMetadataService {
     public void sync(SfOrgSyncRequestDto requestDto, SalesforceSession session, String orgId) {
 
         try {
-            orgId = Helper.resolveOrgId(apiClient, session);
-
             log.info("Starting metadata sync for orgId={}", orgId);
 
 
